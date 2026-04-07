@@ -21,6 +21,7 @@ main.223aabec.js
 execute_uploading_prd.bat
 execute_uploading_prd.ps1
 doc/DSN档案文件上传步骤.pdf
+doc/DSN档案上传CLI持续迭代工程手册.md
 
 # OS / editor
 .DS_Store
