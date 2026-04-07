@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+
+# Local config / secrets
+config.yaml
+
+# Local task files and result write-back
+task.csv
+task.result.csv
+
+# Runtime artifacts
+data/
+output/
+*.db
+*.db-journal
+
+# Local files / samples
+file/
+main.223aabec.js
+execute_uploading_prd.bat
+execute_uploading_prd.ps1
+doc/DSN档案文件上传步骤.pdf
+
+# OS / editor
+.DS_Store
+Thumbs.db
