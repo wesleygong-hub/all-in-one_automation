@@ -1,0 +1,4 @@
+task_id,employee_id,employee_name,business_line,business_type,file_path,upload_result
+任务唯一编号,人员编号/工号,人员姓名，可选,所属业务,业务类型,本地文件路径,上传结果
+TASK_001,EMP001,示例姓名,证明,收入证明,.\file\sample_1.pdf,
+TASK_002,EMP002,示例姓名2,证明,在职证明,.\file\sample_2.pdf,

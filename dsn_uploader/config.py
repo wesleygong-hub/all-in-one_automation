@@ -34,13 +34,13 @@ def _normalize_path(project_root: Path, value: str) -> str:
     return str(path.resolve())
 
 
-def load_config(config_path: str) -> dict[str, Any]:
+def load_config(config_path: str, validate_auth: bool = True) -> dict[str, Any]:
     path = Path(config_path).resolve()
     with path.open("r", encoding="utf-8") as fh:
         raw = yaml.safe_load(fh) or {}
 
     config = _expand_env(raw)
-    project_root = path.parent
+    project_root = _infer_project_root(path)
 
     paths = config.setdefault("paths", {})
     paths.setdefault("sqlite_path", "./data/runtime.db")
@@ -63,7 +63,8 @@ def load_config(config_path: str) -> dict[str, Any]:
     auth = config.setdefault("auth", {})
     config.setdefault("selectors", {})
     config.setdefault("mapping", {})
-    _validate_auth_config(auth)
+    if validate_auth:
+        _validate_auth_config(auth)
     return config
 
 
@@ -72,6 +73,12 @@ def ensure_runtime_dirs(config: dict[str, Any]) -> None:
     Path(paths["sqlite_path"]).parent.mkdir(parents=True, exist_ok=True)
     Path(paths["screenshot_dir"]).mkdir(parents=True, exist_ok=True)
     Path(paths["report_dir"]).mkdir(parents=True, exist_ok=True)
+
+
+def _infer_project_root(config_path: Path) -> Path:
+    if config_path.parent.name.lower() == "config":
+        return config_path.parent.parent
+    return config_path.parent
 
 
 def _validate_auth_config(auth: dict[str, Any]) -> None:
