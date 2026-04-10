@@ -1,13 +1,9 @@
-# Python
+﻿# Python
 __pycache__/
 *.pyc
 
-# Local config / secrets
-config.yaml
-
-# Local task files and result write-back
-task.csv
-task.result.csv
+# Local runtime inputs / write-back
+runtime/
 
 # Runtime artifacts
 data/
@@ -16,12 +12,10 @@ output/
 *.db-journal
 
 # Local files / samples
-file/
-main.223aabec.js
 execute_uploading_prd.bat
 execute_uploading_prd.ps1
-doc/DSN档案文件上传步骤.pdf
-doc/DSN档案上传CLI持续迭代工程手册.md
+doc/DSN妗ｆ鏂囦欢涓婁紶姝ラ.pdf
+doc/DSN妗ｆ涓婁紶CLI鎸佺画杩唬宸ョ▼鎵嬪唽.md
 
 # OS / editor
 .DS_Store

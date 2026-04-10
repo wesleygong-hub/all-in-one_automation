@@ -130,3 +130,11 @@ def _build_parser() -> argparse.ArgumentParser:
     report.add_argument("--config", required=True)
     report.add_argument("--batch-id")
     return parser
+
+
+__all__ = [
+    "cmd_report",
+    "cmd_run",
+    "cmd_validate",
+    "main",
+]

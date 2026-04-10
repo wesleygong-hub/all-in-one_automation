@@ -1,4 +1,4 @@
-from dsn_uploader.cli import main
+from automation.cli import main
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-system:
-  base_url: "https://qa.magicjourney.shanghaidisneyresort.com/login"
+﻿system:
+  base_url: "https://qa.magicjourney.shanghaidisneyresort.com/login?redirect_uri=%2Fhr%2Femployee%2Farchive"
   timeout_ms: 15000
   headed: true
   browser_channel: "msedge"
@@ -20,14 +20,14 @@ selectors:
   login_button: 'button.login-form-button'
   privacy_agreement_checkbox: 'text=同意并接受'
   upload_entry: 'text=上传档案附件'
-  person_select_button: ".cdc-employee-picker_box-entry"
+  person_select_button: '.cdc-employee-picker_box-entry'
   person_modal_title: 'text=选择员工'
   person_query_input: 'input[placeholder="搜索人员"]'
-  person_confirm_button: "button.ant-btn-primary"
+  person_confirm_button: 'button.ant-btn-primary'
   business_line_select: 'label=所属业务'
   business_type_select: 'label=业务类型'
-  upload_file_button: "#attachFile"
-  submit_button: "button.ant-btn-primary"
+  upload_file_button: '#attachFile'
+  submit_button: 'button.ant-btn-primary'
   confirm_modal_title: 'text=提示'
   confirm_modal_content: 'text=是否确定上传文件？'
   confirm_ok_button: 'button.ant-btn-primary'
