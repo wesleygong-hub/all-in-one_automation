@@ -14,8 +14,8 @@ output/
 # Local files / samples
 execute_uploading_prd.bat
 execute_uploading_prd.ps1
-doc/DSN妗ｆ鏂囦欢涓婁紶姝ラ.pdf
-doc/DSN妗ｆ涓婁紶CLI鎸佺画杩唬宸ョ▼鎵嬪唽.md
+doc/*.pdf
+doc/*CLI*.md
 
 # OS / editor
 .DS_Store
