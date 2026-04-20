@@ -108,9 +108,9 @@ python .\main.py report --config .\config\archive_upload.yaml
 - 当前通用自动化能力位于 `automation/`。
 - 这个仓库的长期目标是继续在现有基座之上承载更多业务 flow，而不是回到“单业务专用脚本”模式。
 
-### 报销单填写 flow（骨架阶段）
+### 报销单填写 flow（稳定基线版本）
 
-当前仓库已经接入 `reimbursement-fill` flow 骨架，可先用于任务文件校验与 CLI 接入验证：
+当前仓库已经接入 `reimbursement-fill` flow 稳定基线版本，可用于报销单自动填报主链路验证与后续迭代优化：
 
 ```powershell
 python .\main.py validate reimbursement-fill --config .\config\reimbursement_fill.yaml --tasks .\runtime\reimbursement_fill\task.csv
