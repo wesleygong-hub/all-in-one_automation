@@ -1,0 +1,76 @@
+﻿system:
+  base_url: "https://www.iam.ifsg.com.cn/launchpad?app_id=642bded42fbc8fbef69279b0"
+  timeout_ms: 15000
+  headed: true
+  browser_channel: "msedge"
+  browser_executable_path: ""
+  finance_share_url: "http://fssc.fsg.inner/cwbase/web/gsprtf/main.aspx?"
+  business_entertainment_firstlatitude: "${REIMBURSEMENT_BUSINESS_ENTERTAINMENT_FIRSTLATITUDE}"
+  business_entertainment_form_url: "${REIMBURSEMENT_BUSINESS_ENTERTAINMENT_FORM_URL}"
+
+auth:
+  username: "${IAM_USERNAME}"
+  password: "${IAM_PASSWORD}"
+
+paths:
+  sqlite_path: "./data/runtime.db"
+  screenshot_dir: "./output/screenshots"
+  report_dir: "./output/reports"
+
+selectors:
+  iam_username_input: '#passworLogin_account'
+  iam_password_input: '#passworLogin_password'
+  iam_agreement_checkbox: '.authing-agreements-checkbox input[type="checkbox"]'
+  iam_login_button: 'button[type="submit"]'
+  finance_share_entry: 'div[role="button"][data-id="647d4d9e4472075cd70ac37f"]'
+
+  menu_finance_share: 'xpath=//span[contains(@class,"tree-title") and normalize-space(.)="财务共享"]'
+  menu_online_reimbursement: 'xpath=//span[contains(@class,"tree-title") and normalize-space(.)="网上报账平台"]'
+  go_reimbursement_button: '#FSBZ10020'
+
+  new_bill_button: 'h2:has-text("新建单据")'
+  new_bill_dropdown_arrow: 'xpath=//label[normalize-space(.)="XSelectorLX"]/ancestor::td[1]/following-sibling::td[1]//a[contains(@class,"combo-arrow")]'
+  bill_type_expense: 'a.ti:has-text("费用报销类")'
+  bill_subtype_business_entertainment: 'a.td:has-text("业务招待费报销")'
+
+  electronic_image_tab_entry: 'text=电子影像'
+
+  local_upload_button: 'text=本地上传'
+  upload_dialog: '#UploadDialog'
+  choose_file_button: '#filePicker .webuploader-pick'
+  file_input: '#filePicker input[type="file"], #filePicker2 input[type="file"]'
+  start_upload_button: '.uploadBtn'
+  close_upload_dialog_button: '#layui-layer1 .layui-layer-close'
+
+  invoice_list_item: '.sortwrap .thumb'
+  recognize_button: '#btnInOCR'
+  recognize_success_marker: 'input[data-bind="InvoiceNUM"]'
+  electronic_image_tab_close: 'li.tabs-selected .tabs-close'
+
+  attachment_count_input: 'xpath=//label[contains(normalize-space(.),"附件个数")]/ancestor::td[1]/following-sibling::td[1]//input[contains(@class,"textbox-text")]'
+  business_unit_input: 'xpath=//label[contains(normalize-space(.),"业务单位")]/ancestor::td[1]/following-sibling::td[1]//input[contains(@class,"combo-text") or contains(@class,"textbox-text")]'
+  payment_purpose_input: 'xpath=//label[contains(normalize-space(.),"付款用途")]/ancestor::td[1]/following-sibling::td[1]//textarea'
+
+  detail_tab_select: 'text=报销明细信息'
+  detail_row: 'tr.datagrid-row'
+  reception_type_select: 'td[field="ROBXMX_GXM2"] .combo-arrow'
+  company_count_input: 'td[field="ROBXMX_ZS2"] input.textbox-text'
+  remark_input: 'td[field="ROBXMX_XXSM"] input[type="text"]'
+
+  save_button: 'text=保存'
+  save_success_toast: 'text=保存成功'
+  saved_bill_marker: 'text=业务招待费报销'
+
+mapping:
+  bill_type:
+    expense: '费用报销类'
+  bill_subtype:
+    business_entertainment: '业务招待费报销'
+  detail_reception_type:
+    internal: '内部招待'
+
+runtime:
+  screenshot_on_error: true
+  log_level: "INFO"
+
+

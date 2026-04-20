@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import os
@@ -7,8 +7,6 @@ import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
-
-from flows.archive_upload.task_model import TaskRecord
 
 
 SCHEMA = """
@@ -110,7 +108,7 @@ def init_db(conn: sqlite3.Connection) -> None:
 def insert_task_run(
     conn: sqlite3.Connection,
     batch_id: str,
-    task: TaskRecord,
+    task,
     status: str,
     message: str,
     screenshot_path: str | None,
@@ -127,18 +125,18 @@ def insert_task_run(
         """,
         (
             batch_id,
-            task.task_id,
-            task.employee_id,
-            task.employee_name,
-            task.business_line,
-            task.business_type,
-            task.file_path,
+            getattr(task, "task_id", ""),
+            getattr(task, "employee_id", None),
+            getattr(task, "employee_name", None),
+            getattr(task, "business_line", None),
+            getattr(task, "business_type", None),
+            getattr(task, "file_path", None),
             status,
             message,
             screenshot_path,
             start_time,
             end_time,
-            task.source_row,
+            getattr(task, "source_row", None),
         ),
     )
     conn.commit()

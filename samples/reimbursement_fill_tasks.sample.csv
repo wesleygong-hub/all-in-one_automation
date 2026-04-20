@@ -1,0 +1,3 @@
+﻿reimbursement_id,bill_type,bill_subtype,attachment_count,business_unit,payment_purpose,company_count,file_paths,fill_result
+报销任务编号,单据一级类型,单据二级类型,附件个数,业务单位,付款用途,公司人数,本地文件路径列表（用分号分隔）,填报结果
+RBX_001,费用报销类,业务招待费报销,2,示例业务单位,示例付款用途,4,.\runtime\reimbursement_fill\file\invoice_1.pdf;.\runtime\reimbursement_fill\file\invoice_2.pdf,

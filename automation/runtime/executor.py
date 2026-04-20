@@ -93,7 +93,13 @@ def execute_batch(
                 start_time = datetime.now().isoformat(timespec="seconds")
                 logger.info(f"[TASK {index}/{len(tasks)}] start {task.task_id}")
                 screenshot_path = None
-                result = flow.run_task(page, config, task, logger, step_log)
+                try:
+                    result = flow.run_task(page, config, task, logger, step_log)
+                except Exception as exc:
+                    logger.exception(f"[TASK {task.task_id}] FAILED {exc}")
+                    from flows.reimbursement_fill.task_model import ReimbursementTaskResult
+
+                    result = ReimbursementTaskResult(status="failed", message=str(exc))
                 if result.status != "success" and config["runtime"].get("screenshot_on_error", True):
                     try:
                         screenshot_path = flow.capture_screenshot(page, config["paths"]["screenshot_dir"], task)

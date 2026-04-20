@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import logging
@@ -8,6 +8,7 @@ from automation.config.loader import ensure_runtime_dirs, load_config
 from automation.runtime.executor import execute_batch, report_batch
 from automation.runtime.logger import print_block, setup_logger
 from flows.archive_upload import ArchiveUploadFlow
+from flows.reimbursement_fill import ReimbursementFillFlow
 
 
 def main() -> int:
@@ -50,9 +51,10 @@ def cmd_validate(args: argparse.Namespace, logger: logging.Logger) -> int:
 
 
 def cmd_run(args: argparse.Namespace, logger: logging.Logger) -> int:
-    config = load_config(args.config)
+    flow_name = args.flow or "archive-upload"
+    config = load_config(args.config, validate_auth=_should_validate_auth(flow_name))
     ensure_runtime_dirs(config)
-    flow = _resolve_flow(args.flow)
+    flow = _resolve_flow(flow_name)
 
     print_block(
         logger,
@@ -105,14 +107,19 @@ def _open_result_file(logger: logging.Logger, file_path: str) -> None:
         logger.warning(f"[SUMMARY] results_open_warning={exc}")
 
 
+def _should_validate_auth(flow_name: str | None) -> bool:
+    return (flow_name or "archive-upload") == "archive-upload"
+
 def _resolve_flow(flow_name: str | None):
     if not flow_name or flow_name == "archive-upload":
         return ArchiveUploadFlow()
+    if flow_name == "reimbursement-fill":
+        return ReimbursementFillFlow()
     raise RuntimeError(f"Unsupported flow: {flow_name}")
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="DSN archive upload CLI POC")
+    parser = argparse.ArgumentParser(description="Browser automation CLI")
     subparsers = parser.add_subparsers(dest="command")
 
     validate = subparsers.add_parser("validate", help="Validate task file and config")
@@ -138,3 +145,6 @@ __all__ = [
     "cmd_validate",
     "main",
 ]
+
+
+
