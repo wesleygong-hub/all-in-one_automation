@@ -116,3 +116,7 @@ python .\main.py report --config .\config\archive_upload.yaml
 python .\main.py validate reimbursement-fill --config .\config\reimbursement_fill.yaml --tasks .\runtime\reimbursement_fill\task.csv
 python .\main.py run reimbursement-fill --config .\config\reimbursement_fill.yaml --tasks .\runtime\reimbursement_fill\task.csv --headed
 ```
+
+相关沉淀说明：
+
+- [报销单自动化基座能力沉淀说明](./doc/报销单自动化基座能力沉淀说明.md)

@@ -8,6 +8,7 @@ import sys
 from typing import Protocol
 
 from automation.browser.session import open_browser
+from automation.core.contexts import cache_browser_context_value, get_cached_browser_context_value
 from automation.storage.db import (
     connect,
     fetch_batch_summary,
@@ -41,6 +42,8 @@ class BatchSummary:
     task_count: int
     success: int
     failed: int
+    success_task_ids: list[str]
+    failed_task_ids: list[str]
     report_path: str
     result_file_to_open: str
 
@@ -67,6 +70,8 @@ def execute_batch(
     started_at = datetime.now().isoformat(timespec="seconds")
     success = 0
     failed = 0
+    success_task_ids: list[str] = []
+    failed_task_ids: list[str] = []
     result_file_to_open = str(Path(tasks_path).resolve())
 
     with connect(config["paths"]["sqlite_path"]) as conn:
@@ -90,6 +95,7 @@ def execute_batch(
         ) as (_, _, page):
             flow.initialize_batch_session(page, config, logger)
             for index, task in enumerate(tasks, start=1):
+                cache_browser_context_value(page, "_last_failure_screenshot_path", None)
                 start_time = datetime.now().isoformat(timespec="seconds")
                 logger.info(f"[TASK {index}/{len(tasks)}] start {task.task_id}")
                 screenshot_path = None
@@ -102,9 +108,12 @@ def execute_batch(
                     result = ReimbursementTaskResult(status="failed", message=str(exc))
                 if result.status != "success" and config["runtime"].get("screenshot_on_error", True):
                     try:
-                        screenshot_path = flow.capture_screenshot(page, config["paths"]["screenshot_dir"], task)
+                        screenshot_path = get_cached_browser_context_value(page, "_last_failure_screenshot_path")
+                        if not screenshot_path:
+                            screenshot_path = flow.capture_screenshot(page, config["paths"]["screenshot_dir"], task)
                     except Exception:
                         screenshot_path = None
+                cache_browser_context_value(page, "_last_failure_screenshot_path", None)
                 end_time = datetime.now().isoformat(timespec="seconds")
                 insert_task_run(
                     conn=conn,
@@ -128,8 +137,10 @@ def execute_batch(
 
                 if result.status == "success":
                     success += 1
+                    success_task_ids.append(str(task.task_id))
                 else:
                     failed += 1
+                    failed_task_ids.append(str(task.task_id))
                     logger.info(f"[TASK {task.task_id}] FAILED {result.message}")
                     if screenshot_path:
                         logger.info(f"[TASK {task.task_id}] screenshot={screenshot_path}")
@@ -137,12 +148,14 @@ def execute_batch(
                 flow.reset_task_context(page, config, logger, task.task_id)
 
             report_path = _write_report(
-                report_dir=config["paths"]["report_dir"],
+                log_dir=config["paths"]["log_dir"],
                 batch_id=batch_id,
                 started_at=started_at,
                 task_count=len(tasks),
                 success=success,
                 failed=failed,
+                success_task_ids=success_task_ids,
+                failed_task_ids=failed_task_ids,
             )
             if keep_browser_open:
                 if before_hold is not None:
@@ -155,6 +168,8 @@ def execute_batch(
         task_count=len(tasks),
         success=success,
         failed=failed,
+        success_task_ids=success_task_ids,
+        failed_task_ids=failed_task_ids,
         report_path=report_path,
         result_file_to_open=result_file_to_open,
     )
@@ -167,24 +182,26 @@ def report_batch(config: dict, batch_id: str | None):
 
 
 def _write_report(
-    report_dir: str,
+    log_dir: str,
     batch_id: str,
     started_at: str,
     task_count: int,
     success: int,
     failed: int,
+    success_task_ids: list[str],
+    failed_task_ids: list[str],
 ) -> str:
-    import json
-
-    path = Path(report_dir) / f"{batch_id}.json"
-    payload = {
-        "batch_id": batch_id,
-        "started_at": started_at,
-        "task_count": task_count,
-        "success": success,
-        "failed": failed,
-    }
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    path = Path(log_dir) / f"{batch_id}_report.log"
+    lines = [
+        f"[REPORT] batch_id={batch_id}",
+        f"[REPORT] started_at={started_at}",
+        f"[REPORT] task_count={task_count}",
+        f"[REPORT] success={success}",
+        f"[REPORT] failed={failed}",
+        f"[REPORT] success_task_ids={','.join(success_task_ids) if success_task_ids else '-'}",
+        f"[REPORT] failed_task_ids={','.join(failed_task_ids) if failed_task_ids else '-'}",
+    ]
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return str(path)
 
 

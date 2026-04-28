@@ -45,10 +45,10 @@ def load_config(config_path: str, validate_auth: bool = True) -> dict[str, Any]:
     paths = config.setdefault("paths", {})
     paths.setdefault("sqlite_path", "./data/runtime.db")
     paths.setdefault("screenshot_dir", "./output/screenshots")
-    paths.setdefault("report_dir", "./output/reports")
+    paths.setdefault("log_dir", "./output/logs")
     paths["sqlite_path"] = _normalize_path(project_root, paths["sqlite_path"])
     paths["screenshot_dir"] = _normalize_path(project_root, paths["screenshot_dir"])
-    paths["report_dir"] = _normalize_path(project_root, paths["report_dir"])
+    paths["log_dir"] = _normalize_path(project_root, paths["log_dir"])
 
     system = config.setdefault("system", {})
     system.setdefault("timeout_ms", 15000)
@@ -62,6 +62,7 @@ def load_config(config_path: str, validate_auth: bool = True) -> dict[str, Any]:
 
     auth = config.setdefault("auth", {})
     config.setdefault("selectors", {})
+    config.setdefault("selector_contexts", {})
     config.setdefault("mapping", {})
     if validate_auth:
         _validate_auth_config(auth)
@@ -72,7 +73,7 @@ def ensure_runtime_dirs(config: dict[str, Any]) -> None:
     paths = config["paths"]
     Path(paths["sqlite_path"]).parent.mkdir(parents=True, exist_ok=True)
     Path(paths["screenshot_dir"]).mkdir(parents=True, exist_ok=True)
-    Path(paths["report_dir"]).mkdir(parents=True, exist_ok=True)
+    Path(paths["log_dir"]).mkdir(parents=True, exist_ok=True)
 
 
 def _infer_project_root(config_path: Path) -> Path:

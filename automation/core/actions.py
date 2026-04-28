@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from time import perf_counter
+from typing import Any, Callable
 
 from playwright.sync_api import FileChooser, Locator, Page
 
@@ -21,6 +23,107 @@ def click_locator(page: Page, selector: str, timeout: int, within_modal: bool = 
         target = locator_with_scope(modal_scope(page), selector)
     target.first.wait_for(timeout=timeout)
     target.first.click(timeout=timeout)
+
+
+def click_locator_fast(context, page: Page, selector: str, timeout: int, error_message: str) -> None:
+    last_error: Exception | None = None
+    end_at = perf_counter() + (timeout / 1000)
+    while perf_counter() < end_at:
+        current = context.locator(selector).first
+        try:
+            current.wait_for(state="visible", timeout=300)
+            current.click(timeout=300)
+            return
+        except Exception as exc:
+            last_error = exc
+        page.wait_for_timeout(60)
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(error_message)
+
+
+def click_latest_visible_element(context, selector: str) -> bool:
+    try:
+        return bool(
+            context.evaluate(
+                """
+                (selector) => {
+                  const isVisible = (el) => {
+                    if (!el) return false;
+                    const style = window.getComputedStyle(el);
+                    const rect = el.getBoundingClientRect();
+                    return style.display !== 'none'
+                      && style.visibility !== 'hidden'
+                      && Number(style.opacity || '1') !== 0
+                      && rect.width > 0
+                      && rect.height > 0;
+                  };
+                  const nodes = Array.from(document.querySelectorAll(selector)).filter(isVisible);
+                  const target = nodes[nodes.length - 1];
+                  if (!target) return false;
+                  target.click();
+                  return true;
+                }
+                """,
+                selector,
+            )
+        )
+    except Exception:
+        return False
+
+
+def fill_locator_value(
+    context: Any,
+    selector: str,
+    value: str,
+    timeout: int,
+    error_message: str,
+    wait_visible: Callable[[Any, int], bool],
+) -> None:
+    target = context.locator(selector).first
+    if not wait_visible(target, min(timeout, 1800)):
+        raise RuntimeError(error_message)
+    try:
+        target.click(timeout=300)
+    except Exception:
+        pass
+    target.fill(value, timeout=timeout)
+    try:
+        target.dispatch_event("change")
+    except Exception:
+        pass
+
+
+def fill_first_matching_locator(
+    contexts: list[Any],
+    selector_candidates: list[str],
+    value: str,
+    timeout: int,
+    error_message: str,
+    wait_visible: Callable[[Any, int], bool],
+    context_namer: Callable[[Any, int], str] | None = None,
+) -> None:
+    attempts: list[str] = []
+    namer = context_namer or (lambda _context, idx: f"context[{idx}]")
+    for idx, context in enumerate(contexts):
+        context_name = namer(context, idx)
+        for selector in selector_candidates:
+            if not selector:
+                continue
+            try:
+                target = context.locator(selector)
+                count = target.count()
+                attempts.append(f"{context_name}:{selector}:count={count}")
+                if count == 0:
+                    continue
+                if not wait_visible(target.first, min(timeout, 500)):
+                    attempts.append(f"{context_name}:{selector}:visible=false")
+                    continue
+                fill_locator_value(context, selector, value, timeout, error_message, wait_visible)
+                return
+            except Exception as exc:
+                attempts.append(f"{context_name}:{selector}:error={type(exc).__name__}")
+    raise RuntimeError(f"{error_message} attempts={attempts}")
 
 
 def dismiss_overlays(page: Page) -> None:

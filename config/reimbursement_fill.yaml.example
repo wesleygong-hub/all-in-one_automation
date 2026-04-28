@@ -52,6 +52,8 @@ selectors:
   payment_purpose_input: 'xpath=//label[contains(normalize-space(.),"付款用途")]/ancestor::td[1]/following-sibling::td[1]//textarea'
 
   detail_tab_select: 'text=报销明细信息'
+  detail_add_button: 'a[data-action="AddItemCommonBXFY"][data-tabpanel="XtraTabPage3"]'
+  detail_delete_button: 'a[data-action="RemoveSelectCommonBXFY"][data-tabpanel="XtraTabPage3"]'
   detail_row: 'tr.datagrid-row'
   reception_type_select: 'td[field="ROBXMX_GXM2"] .combo-arrow'
   company_count_input: 'td[field="ROBXMX_ZS2"] input.textbox-text'
@@ -60,6 +62,23 @@ selectors:
   save_button: 'text=保存'
   save_success_toast: 'text=保存成功'
   saved_bill_marker: 'text=业务招待费报销'
+
+selector_contexts:
+  go_reimbursement_button: "page"
+  electronic_image_tab_entry: "bill_iframe"
+  local_upload_button: "image_system_iframe"
+  choose_file_button: "upload_dialog_iframe"
+  file_input: "upload_dialog_iframe"
+  start_upload_button: "upload_dialog_iframe"
+  invoice_list_item: "image_system_iframe"
+  recognize_button: "image_system_iframe"
+  attachment_count_input: "bill_form_iframe"
+  business_unit_input: "bill_form_iframe"
+  payment_purpose_input: "bill_form_iframe"
+  detail_tab_select: "bill_form_iframe"
+  detail_add_button: "bill_form_iframe"
+  detail_delete_button: "bill_form_iframe"
+  save_button: "bill_form_iframe"
 
 mapping:
   bill_type:

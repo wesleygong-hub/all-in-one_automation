@@ -5,10 +5,11 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from playwright.sync_api import Locator, Page
 
+from automation.runtime.steps import StepLogger, log_task_step as _log_task_step
 from automation.core.actions import (
     click_confirm_submit,
     click_locator,
@@ -34,9 +35,6 @@ from automation.core.state import (
 from automation.core.waits import wait_after_login, wait_url_contains
 from flows.archive_upload.task_loader import load_tasks, validate_tasks
 from flows.archive_upload.task_model import TaskRecord, TaskResult
-
-
-StepLogger = Callable[[str, str, str], None]
 
 
 @dataclass(slots=True)
@@ -190,8 +188,7 @@ def _step(
     status: str,
     message: str,
 ) -> None:
-    logger.info(f"[TASK {task.task_id}] [{step_name}] {status} {message}")
-    step_log(task.task_id, step_name, f"{status} {message}")
+    _log_task_step(logger, step_log, task.task_id, step_name, status, message)
 
 
 def _fill_login(page: Page, selectors: dict[str, str], auth: dict[str, str], timeout: int) -> None:

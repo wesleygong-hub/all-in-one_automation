@@ -14,6 +14,7 @@ from flows.reimbursement_fill.task_model import (
 
 TASK_DESCRIPTION_ROW = {
     "task_id": "任务唯一编号",
+    "bill_type": "单据类型",
     "business_department": "业务单位",
 }
 
@@ -54,6 +55,7 @@ def load_tasks(task_path: str) -> list[ReimbursementTaskRecord]:
             continue
         task = ReimbursementTaskRecord(
             task_id=task_id,
+            bill_type=row_dict.get("bill_type", ""),
             business_department=row_dict.get("business_department", ""),
             payment_purpose=row_dict.get("payment_purpose", ""),
             source_row=row_index,
@@ -104,11 +106,16 @@ def validate_tasks(tasks: list[ReimbursementTaskRecord], task_path: str | None =
                 value = getattr(invoice, field)
                 if not value:
                     errors.append(f"row {invoice.source_row} [invoice]: `{field}` is required")
+            if _requires_company_count(task.bill_type):
+                if not invoice.company_count:
+                    errors.append(f"row {invoice.source_row} [invoice]: `company_count` is required for bill_type `{task.bill_type}`")
             if invoice.company_count:
                 try:
                     int(invoice.company_count)
                 except ValueError:
                     errors.append(f"row {invoice.source_row} [invoice]: `company_count` must be an integer")
+            if _requires_business_department(task.bill_type) and not task.business_department:
+                errors.append(f"row {task.source_row} [task]: `business_department` is required for bill_type `{task.bill_type}`")
             if invoice.approved_amount:
                 try:
                     float(invoice.approved_amount)
@@ -158,6 +165,7 @@ def _row_to_dict(headers: list[str], row: tuple | list | None) -> dict[str, str]
 def _is_task_description_row(row: dict[str, str]) -> bool:
     return (
         row.get("task_id", "") == TASK_DESCRIPTION_ROW["task_id"]
+        and row.get("bill_type", "") == TASK_DESCRIPTION_ROW["bill_type"]
         and row.get("business_department", "") == TASK_DESCRIPTION_ROW["business_department"]
     )
 
@@ -167,6 +175,14 @@ def _is_invoice_description_row(row: dict[str, str]) -> bool:
         row.get("task_id", "") == INVOICE_DESCRIPTION_ROW["task_id"]
         and row.get("company_count", "") == INVOICE_DESCRIPTION_ROW["company_count"]
     )
+
+
+def _requires_company_count(bill_type: str) -> bool:
+    return "业务招待费报销" in str(bill_type)
+
+
+def _requires_business_department(bill_type: str) -> bool:
+    return "业务招待费报销" in str(bill_type)
 
 
 __all__ = ["load_tasks", "validate_tasks"]

@@ -15,7 +15,7 @@ auth:
 paths:
   sqlite_path: "./data/runtime.db"
   screenshot_dir: "./output/screenshots"
-  report_dir: "./output/reports"
+  log_dir: "./output/logs"
 
 selectors:
   iam_username_input: '#passworLogin_account'
@@ -32,6 +32,7 @@ selectors:
   new_bill_dropdown_arrow: 'xpath=//label[normalize-space(.)="XSelectorLX"]/ancestor::td[1]/following-sibling::td[1]//a[contains(@class,"combo-arrow")]'
   bill_type_expense: 'a.ti:has-text("费用报销类")'
   bill_subtype_business_entertainment: 'a.td:has-text("业务招待费报销")'
+  bill_subtype_city_transport: 'a.td:has-text("市内交通费报销")'
 
   electronic_image_tab_entry: 'a[name="btnViewImage"], a[data-action="ViewImage"]'
 
@@ -58,6 +59,7 @@ selectors:
   payment_purpose_input_fallback: 'textarea#XMultiTextBox2'
 
   detail_tab_select: 'text=报销明细信息'
+  city_transport_detail_tab_select: 'text=费用分摊'
   detail_row: 'tr.datagrid-row'
   detail_add_button: 'a[data-action="AddItemCommonBXFY"][data-tabpanel="XtraTabPage3"]'
   detail_delete_button: 'a[data-action="RemoveSelectCommonBXFY"][data-tabpanel="XtraTabPage3"]'
@@ -65,18 +67,44 @@ selectors:
   company_count_input: 'td[field="ROBXMX_ZS2"] input.textbox-text'
   approved_amount_input: 'td[field="ROBXMX_BXJE"] input.textbox-text'
   remark_input: 'td[field="ROBXMX_XXSM"] input[type="text"]'
+  city_transport_remark_input: 'td[field="ROFYFT_FTSM"] input.datagrid-editable-input.validatebox-text'
 
   save_button: 'text=保存'
   save_success_toast: 'text=保存成功'
   saved_bill_marker: 'text=业务招待费报销'
+  saved_bill_marker_city_transport: 'text=市内交通费报销'
   reimbursement_bill_tab_close: 'li.tabs-selected .tabs-close'
   reimbursement_bill_close_confirm_button: 'xpath=//div[contains(@class,"messager-button")]//a[.//span[normalize-space(.)="确定"]]'
+
+selector_contexts:
+  go_reimbursement_button: "page"
+  electronic_image_tab_entry: "bill_iframe"
+  local_upload_button: "image_system_iframe"
+  upload_dialog_iframe: "image_system_iframe"
+  choose_file_button: "upload_dialog_iframe"
+  file_input: "upload_dialog_iframe"
+  start_upload_button: "upload_dialog_iframe"
+  invoice_list_item: "image_system_iframe"
+  recognize_button: "image_system_iframe"
+  duplicate_invoice_marker: "image_system_iframe"
+  attachment_count_input: "bill_form_iframe"
+  business_unit_input: "bill_form_iframe"
+  business_unit_select: "bill_form_iframe"
+  payment_purpose_input: "bill_form_iframe"
+  detail_tab_select: "bill_form_iframe"
+  city_transport_detail_tab_select: "bill_form_iframe"
+  detail_add_button: "bill_form_iframe"
+  detail_delete_button: "bill_form_iframe"
+  city_transport_remark_input: "bill_form_iframe"
+  save_button: "bill_form_iframe"
+  reimbursement_bill_close_confirm_button: "bill_outer_iframe"
 
 mapping:
   bill_type:
     expense: '费用报销类'
   bill_subtype:
     business_entertainment: '业务招待费报销'
+    city_transport: '市内交通费报销'
   detail_reception_type:
     internal: '内部接待'
 

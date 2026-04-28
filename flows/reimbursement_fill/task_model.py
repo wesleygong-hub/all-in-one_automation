@@ -6,13 +6,12 @@ from pathlib import Path
 
 TASK_SHEET_REQUIRED_FIELDS = (
     "task_id",
-    "business_department",
+    "bill_type",
     "payment_purpose",
 )
 
 INVOICE_SHEET_REQUIRED_FIELDS = (
     "task_id",
-    "company_count",
     "file_path",
     "remark",
 )
@@ -35,6 +34,7 @@ class ReimbursementInvoiceRecord:
 @dataclass(slots=True)
 class ReimbursementTaskRecord:
     task_id: str
+    bill_type: str
     business_department: str
     payment_purpose: str
     source_row: int

@@ -1,14 +1,15 @@
 ﻿from __future__ import annotations
 
 import argparse
+from datetime import datetime
+import importlib
 import logging
 import os
+from pathlib import Path
 
 from automation.config.loader import ensure_runtime_dirs, load_config
 from automation.runtime.executor import execute_batch, report_batch
 from automation.runtime.logger import print_block, setup_logger
-from flows.archive_upload import ArchiveUploadFlow
-from flows.reimbursement_fill import ReimbursementFillFlow
 
 
 def main() -> int:
@@ -22,6 +23,8 @@ def main() -> int:
         return cmd_run(args, logger)
     if args.command == "report":
         return cmd_report(args, logger)
+    if args.command == "selfcheck":
+        return cmd_selfcheck(logger)
     parser.print_help()
     return 1
 
@@ -44,7 +47,7 @@ def cmd_validate(args: argparse.Namespace, logger: logging.Logger) -> int:
             f"- task_count: {len(tasks)}",
             f"- sqlite_path: {config['paths']['sqlite_path']}",
             f"- screenshot_dir: {config['paths']['screenshot_dir']}",
-            f"- report_dir: {config['paths']['report_dir']}",
+            f"- log_dir: {config['paths']['log_dir']}",
         ],
     )
     return 0
@@ -54,6 +57,8 @@ def cmd_run(args: argparse.Namespace, logger: logging.Logger) -> int:
     flow_name = args.flow or "archive-upload"
     config = load_config(args.config, validate_auth=_should_validate_auth(flow_name))
     ensure_runtime_dirs(config)
+    log_file = _build_run_log_path(config)
+    logger = setup_logger(log_file=log_file)
     flow = _resolve_flow(flow_name)
 
     print_block(
@@ -77,8 +82,13 @@ def cmd_run(args: argparse.Namespace, logger: logging.Logger) -> int:
         print_block(logger, [str(exc)])
         return 1
 
-    logger.info(f"[SUMMARY] total={summary.task_count} success={summary.success} failed={summary.failed}")
+    logger.info(f"[SUMMARY] task_count={summary.task_count}")
+    logger.info(f"[SUMMARY] success={summary.success}")
+    logger.info(f"[SUMMARY] failed={summary.failed}")
+    logger.info(f"[SUMMARY] success_task_ids={','.join(summary.success_task_ids) if summary.success_task_ids else '-'}")
+    logger.info(f"[SUMMARY] failed_task_ids={','.join(summary.failed_task_ids) if summary.failed_task_ids else '-'}")
     logger.info(f"[SUMMARY] report={summary.report_path}")
+    logger.info(f"[SUMMARY] log={log_file}")
     return 0 if summary.failed == 0 else 1
 
 
@@ -99,6 +109,29 @@ def cmd_report(args: argparse.Namespace, logger: logging.Logger) -> int:
     return 0
 
 
+def cmd_selfcheck(logger: logging.Logger) -> int:
+    modules = [
+        "automation.cli",
+        "automation.core.ui_patterns",
+        "flows.reimbursement_fill.flow",
+        "flows.archive_upload.flow",
+    ]
+    failures: list[str] = []
+    logger.info("[SELFCHECK] START import self-check")
+    for module_name in modules:
+        try:
+            importlib.import_module(module_name)
+            logger.info(f"[SELFCHECK] OK {module_name}")
+        except Exception as exc:
+            failures.append(f"{module_name}: {type(exc).__name__}: {exc}")
+            logger.info(f"[SELFCHECK] FAILED {module_name} error={type(exc).__name__}: {exc}")
+    if failures:
+        print_block(logger, ["[SELFCHECK] failed"] + [f"- {item}" for item in failures])
+        return 1
+    logger.info("[SELFCHECK] SUCCESS all imports passed")
+    return 0
+
+
 def _open_result_file(logger: logging.Logger, file_path: str) -> None:
     try:
         os.startfile(file_path)
@@ -107,13 +140,23 @@ def _open_result_file(logger: logging.Logger, file_path: str) -> None:
         logger.warning(f"[SUMMARY] results_open_warning={exc}")
 
 
+def _build_run_log_path(config: dict) -> str:
+    log_dir = Path(config["paths"]["log_dir"])
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return str((log_dir / f"{timestamp}.log").resolve())
+
+
 def _should_validate_auth(flow_name: str | None) -> bool:
     return (flow_name or "archive-upload") == "archive-upload"
 
 def _resolve_flow(flow_name: str | None):
     if not flow_name or flow_name == "archive-upload":
+        from flows.archive_upload import ArchiveUploadFlow
+
         return ArchiveUploadFlow()
     if flow_name == "reimbursement-fill":
+        from flows.reimbursement_fill import ReimbursementFillFlow
+
         return ReimbursementFillFlow()
     raise RuntimeError(f"Unsupported flow: {flow_name}")
 
@@ -136,12 +179,15 @@ def _build_parser() -> argparse.ArgumentParser:
     report = subparsers.add_parser("report", help="Show batch summary")
     report.add_argument("--config", required=True)
     report.add_argument("--batch-id")
+
+    subparsers.add_parser("selfcheck", help="Run lightweight import self-check")
     return parser
 
 
 __all__ = [
     "cmd_report",
     "cmd_run",
+    "cmd_selfcheck",
     "cmd_validate",
     "main",
 ]
