@@ -11,28 +11,13 @@ from playwright.sync_api import Locator, Page
 
 from automation.runtime.steps import StepLogger, log_task_step as _log_task_step
 from automation.core.actions import (
-    click_confirm_submit,
     click_locator,
-    click_person_search,
-    click_submit,
-    click_visible_upload_entry,
     dismiss_overlays,
     fill_locator,
-    open_person_selector,
-    select_option,
-    select_person_radio,
     upload_file,
-    wait_confirm_submit_modal,
-    wait_person_search_results,
 )
 from automation.core.selectors import locator, modal_scope
-from automation.core.state import (
-    is_archive_list_page,
-    is_upload_page,
-    wait_archive_list_ready,
-    wait_upload_page,
-)
-from automation.core.waits import wait_after_login, wait_url_contains
+from automation.core.waits import wait_url_contains, wait_visible
 from flows.archive_upload.task_loader import load_tasks, validate_tasks
 from flows.archive_upload.task_model import TaskRecord, TaskResult
 
@@ -59,6 +44,9 @@ class ArchiveUploadFlow:
     def reset_task_context(self, page, config: dict, logger, task_id: str) -> None:
         reset_task_context(page, config, logger, task_id)
 
+    def build_failed_result(self, message: str):
+        return TaskResult(status="failed", message=message)
+
 
 def run_task(
     page: Page,
@@ -77,7 +65,7 @@ def run_task(
         _step(logger, step_log, task, "open_upload_entry", "SUCCESS", "已进入上传页")
 
         _step(logger, step_log, task, "open_person_selector", "START", "打开人员选择弹窗")
-        open_person_selector(page, selectors, timeout)
+        _open_person_selector(page, selectors, timeout)
         _step(logger, step_log, task, "open_person_selector", "SUCCESS", "人员弹窗已打开")
 
         _step(logger, step_log, task, "search_person", "START", "搜索并选择人员")
@@ -89,11 +77,11 @@ def run_task(
         _step(logger, step_log, task, "confirm_person", "SUCCESS", "人员已确认")
 
         _step(logger, step_log, task, "select_business_line", "START", f"选择所属业务 {task.business_line}")
-        select_option(page, selectors["business_line_select"], _map_value(mapping, "business_line", task.business_line), timeout)
+        _select_option(page, selectors["business_line_select"], _map_value(mapping, "business_line", task.business_line), timeout)
         _step(logger, step_log, task, "select_business_line", "SUCCESS", "所属业务已选择")
 
         _step(logger, step_log, task, "select_business_type", "START", f"选择业务类型 {task.business_type}")
-        select_option(page, selectors["business_type_select"], _map_value(mapping, "business_type", task.business_type), timeout)
+        _select_option(page, selectors["business_type_select"], _map_value(mapping, "business_type", task.business_type), timeout)
         _step(logger, step_log, task, "select_business_type", "SUCCESS", "业务类型已选择")
 
         _step(logger, step_log, task, "upload_file", "START", f"上传文件 {task.file_name}")
@@ -101,12 +89,12 @@ def run_task(
         _step(logger, step_log, task, "upload_file", "SUCCESS", "文件已上传")
 
         _step(logger, step_log, task, "submit_form", "START", "提交表单")
-        click_submit(page, selectors["submit_button"], timeout)
+        _click_submit(page, selectors["submit_button"], timeout)
         _step(logger, step_log, task, "submit_form", "SUCCESS", "已点击提交")
 
         _step(logger, step_log, task, "confirm_submit", "START", "确认提交")
-        wait_confirm_submit_modal(page, selectors, timeout)
-        click_confirm_submit(page, selectors, timeout)
+        _wait_confirm_submit_modal(page, selectors, timeout)
+        _click_confirm_submit(page, selectors, timeout)
         _step(logger, step_log, task, "confirm_submit", "SUCCESS", "已确认提交")
 
         _step(logger, step_log, task, "verify_result", "START", "校验列表页第一条记录")
@@ -150,8 +138,8 @@ def reset_task_context(
         pass
 
     try:
-        if is_archive_list_page(page):
-            wait_archive_list_ready(page, timeout)
+        if _is_archive_list_page(page):
+            _wait_archive_list_ready(page, timeout)
             logger.info(f"[TASK {task_id}] context_reset=current_list_page")
             return
     except Exception:
@@ -159,7 +147,7 @@ def reset_task_context(
 
     try:
         page.goto(list_url, wait_until="domcontentloaded")
-        wait_archive_list_ready(page, timeout)
+        _wait_archive_list_ready(page, timeout)
         logger.info(f"[TASK {task_id}] context_reset={list_url}")
         return
     except Exception:
@@ -167,7 +155,7 @@ def reset_task_context(
 
     try:
         page.reload(wait_until="domcontentloaded")
-        wait_archive_list_ready(page, timeout)
+        _wait_archive_list_ready(page, timeout)
         logger.info(f"[TASK {task_id}] context_reset=reload")
     except Exception as exc:
         logger.warning(f"[TASK {task_id}] context_reset_warning={exc}")
@@ -211,7 +199,7 @@ def _submit_login(page: Page, login_selector: str, password_selector: str, timeo
     for action in attempts:
         try:
             action()
-            wait_after_login(page, timeout)
+            _wait_after_login(page, timeout)
             return
         except Exception as exc:
             last_error = exc
@@ -220,11 +208,341 @@ def _submit_login(page: Page, login_selector: str, password_selector: str, timeo
     raise RuntimeError("登录提交失败")
 
 
+def _wait_after_login(page: Page, timeout: int) -> None:
+    try:
+        page.wait_for_url("**/hr/employee/archive**", timeout=timeout)
+        return
+    except Exception:
+        pass
+    try:
+        page.get_by_text("上传档案附件", exact=False).first.wait_for(timeout=timeout)
+        return
+    except Exception:
+        pass
+    try:
+        page.get_by_text("档案管理", exact=False).first.wait_for(timeout=timeout)
+        return
+    except Exception:
+        pass
+    raise RuntimeError("登录后未进入档案业务首页")
+
+
+def _wait_upload_page(page: Page, timeout: int) -> None:
+    try:
+        page.wait_for_url("**/hr/employee/archive/uploadArchive**", timeout=timeout)
+    except Exception:
+        pass
+
+    try:
+        wait_visible(page, "text=上传方式", timeout)
+        wait_visible(page, "text=选择人员", timeout)
+        return
+    except Exception:
+        pass
+
+    raise RuntimeError("未成功进入档案上传页")
+
+
+def _is_upload_page(page: Page) -> bool:
+    try:
+        if "/hr/employee/archive/uploadArchive" in page.url:
+            return True
+    except Exception:
+        pass
+    try:
+        return (
+            page.get_by_text("上传方式", exact=False).count() > 0
+            and page.get_by_text("选择人员", exact=False).count() > 0
+        )
+    except Exception:
+        return False
+
+
+def _wait_archive_list_ready(page: Page, timeout: int) -> None:
+    interval_ms = 300
+    elapsed_ms = 0
+    success_toast = page.get_by_text("操作成功", exact=False)
+    loading_indicators = [
+        page.locator(".ant-spin-spinning"),
+        page.locator(".ant-spin-dot"),
+        page.get_by_text("加载中", exact=False),
+    ]
+
+    while elapsed_ms <= timeout:
+        try:
+            if success_toast.count() > 0 and success_toast.first.is_visible():
+                page.wait_for_timeout(300)
+        except Exception:
+            pass
+
+        loading = False
+        for indicator in loading_indicators:
+            try:
+                if indicator.count() > 0 and indicator.first.is_visible():
+                    loading = True
+                    break
+            except Exception:
+                continue
+
+        if not loading:
+            return
+
+        page.wait_for_timeout(interval_ms)
+        elapsed_ms += interval_ms
+
+
+def _is_archive_list_page(page: Page) -> bool:
+    try:
+        if "/hr/employee/archive" not in page.url:
+            return False
+        if "/hr/employee/archive/uploadArchive" in page.url:
+            return False
+    except Exception:
+        return False
+
+    try:
+        return (
+            page.get_by_text("档案管理", exact=False).count() > 0
+            or page.get_by_text("上传档案附件", exact=False).count() > 0
+        )
+    except Exception:
+        return False
+
+
+def _click_submit(page: Page, submit_selector: str, timeout: int) -> None:
+    attempts = [
+        lambda: click_locator(page, submit_selector, timeout),
+        lambda: page.get_by_role("button", name="提交").first.click(timeout=2500),
+        lambda: page.get_by_text("提交", exact=False).first.click(timeout=2500),
+    ]
+    last_error: Exception | None = None
+    for action in attempts:
+        try:
+            action()
+            return
+        except Exception as exc:
+            last_error = exc
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("未找到提交按钮")
+
+
+def _wait_confirm_submit_modal(page: Page, selectors: dict[str, str], timeout: int) -> None:
+    modal = modal_scope(page)
+    candidates = [
+        selectors.get("confirm_modal_content", "text=是否确定上传文件？"),
+        selectors.get("confirm_modal_title", "text=提示"),
+        selectors.get("confirm_ok_button", "button.ant-btn-primary"),
+        "button.ant-btn-primary",
+    ]
+    deadline_ms = min(timeout, 4000)
+    interval_ms = 200
+    elapsed_ms = 0
+
+    while elapsed_ms <= deadline_ms:
+        for selector in candidates:
+            try:
+                current = modal.locator(selector).first
+                if current.count() > 0 and current.is_visible():
+                    return
+            except Exception:
+                continue
+        page.wait_for_timeout(interval_ms)
+        elapsed_ms += interval_ms
+    raise RuntimeError("确认上传弹窗未出现")
+
+
+def _click_confirm_submit(page: Page, selectors: dict[str, str], timeout: int) -> None:
+    modal = modal_scope(page)
+    candidates = [
+        selectors.get("confirm_ok_button", "button.ant-btn-primary"),
+        "button.ant-btn-primary",
+        'button:has-text("确定")',
+        "text=确定",
+    ]
+    last_error: Exception | None = None
+    for selector in candidates:
+        try:
+            modal.locator(selector).first.click(timeout=min(timeout, 1500))
+            return
+        except Exception as exc:
+            last_error = exc
+            continue
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError("未找到确认上传的确定按钮")
+
+
+def _click_visible_upload_entry(page: Page, timeout: int) -> None:
+    candidates = [
+        page.get_by_role("button", name="上传档案附件"),
+        page.locator("button").filter(has_text=re.compile("上传档案附件")),
+        page.get_by_text("上传档案附件", exact=False),
+    ]
+    for current in candidates:
+        try:
+            if current.count() > 0:
+                current.first.click(timeout=timeout)
+                return
+        except Exception:
+            continue
+    raise RuntimeError("当前页面未找到可点击的“上传档案附件”按钮")
+
+
+def _click_person_search(page: Page, timeout: int) -> None:
+    modal = modal_scope(page)
+    candidates = [
+        modal.locator(".ant-input-search-button"),
+        modal.locator("button.ant-input-search-button"),
+        modal.locator("span[role='img'][aria-label='search']"),
+        modal.locator("xpath=//input[@placeholder='搜索人员']/following-sibling::*[1]"),
+    ]
+    for current in candidates:
+        try:
+            if current.count() > 0:
+                current.first.click(timeout=timeout)
+                return
+        except Exception:
+            continue
+    raise RuntimeError("未找到人员搜索按钮")
+
+
+def _wait_person_search_results(page: Page, timeout: int) -> None:
+    modal = modal_scope(page)
+    spinner_candidates = [
+        modal.locator(".ant-spin-spinning"),
+        modal.locator(".ant-spin-dot"),
+    ]
+
+    page.wait_for_timeout(800)
+    for spinner in spinner_candidates:
+        try:
+            if spinner.count() > 0:
+                spinner.first.wait_for(state="hidden", timeout=timeout)
+        except Exception:
+            continue
+
+    page.wait_for_timeout(800)
+
+
+def _select_person_radio(modal: Locator, timeout: int) -> None:
+    candidates = [
+        modal.locator(".ant-radio-wrapper"),
+        modal.locator("label.ant-radio-wrapper"),
+        modal.locator("input.ant-radio-input"),
+    ]
+    for current in candidates:
+        try:
+            if current.count() > 0:
+                current.first.click(timeout=timeout)
+                return
+        except Exception:
+            continue
+    raise RuntimeError("未找到员工记录单选按钮")
+
+
+def _wait_person_modal(page: Page, selectors: dict[str, str], timeout: int) -> None:
+    candidates = [
+        selectors.get("person_modal_title", "text=选择员工"),
+        selectors.get("person_query_input", "input[placeholder='搜索人员']"),
+        "input[placeholder='搜索人员']",
+    ]
+    for selector in candidates:
+        try:
+            locator(page, selector).first.wait_for(timeout=timeout)
+            return
+        except Exception:
+            continue
+    raise RuntimeError("人员选择弹窗未出现")
+
+
+def _open_person_selector(page: Page, selectors: dict[str, str], timeout: int) -> None:
+    if not _is_upload_page(page):
+        raise RuntimeError("当前页面不在上传表单，无法打开人员弹窗")
+
+    try:
+        click_locator(page, selectors["person_select_button"], min(timeout, 3000))
+        _wait_person_modal(page, selectors, min(timeout, 4000))
+        return
+    except Exception:
+        pass
+
+    try:
+        click_locator(page, ".cdc-employee-picker_box-entry", min(timeout, 3000))
+        _wait_person_modal(page, selectors, min(timeout, 4000))
+        return
+    except Exception:
+        pass
+
+    input_locator = _person_input_locator(page)
+    input_locator.wait_for(timeout=timeout)
+    box = input_locator.bounding_box(timeout=timeout)
+    if not box:
+        raise RuntimeError("无法获取选择人员输入框位置")
+
+    field_x = box["x"] + min(box["width"] * 0.35, 120)
+    icon_x = box["x"] + box["width"] - 18
+    y = box["y"] + box["height"] / 2
+
+    page.mouse.click(field_x, y)
+    page.wait_for_timeout(120)
+    _trigger_person_picker(page, icon_x, y)
+    _wait_person_modal(page, selectors, min(timeout, 4000))
+
+
+def _person_input_locator(page: Page) -> Locator:
+    candidates = [
+        page.locator("xpath=//*[contains(normalize-space(.), '选择人员')]/following::input[1]"),
+        page.locator("input").first,
+    ]
+    for current in candidates:
+        try:
+            if current.count() > 0:
+                return current.first
+        except Exception:
+            continue
+    raise RuntimeError("未找到选择人员输入框")
+
+
+def _select_option(page: Page, field_selector: str, value: str, timeout: int) -> None:
+    field = locator(page, field_selector)
+    field.first.click(timeout=timeout)
+    page.wait_for_timeout(300)
+
+    option_candidates = (
+        page.locator(f".ant-select-item.ant-select-item-option[title='{value}']"),
+        page.locator(f".ant-select-item-option[title='{value}'] .ant-select-item-option-content"),
+        page.locator(".ant-select-dropdown").get_by_text(value, exact=True),
+        page.locator(".ant-select-item-option-content").get_by_text(value, exact=True),
+        page.get_by_role("option", name=value),
+        page.get_by_text(value, exact=True),
+        page.locator(f"text={value}"),
+    )
+    for candidate in option_candidates:
+        try:
+            if candidate.count() > 0:
+                candidate.first.click(timeout=timeout)
+                page.wait_for_timeout(300)
+                return
+        except Exception:
+            continue
+    raise RuntimeError(f"页面中找不到选项值: {value}")
+
+
+def _trigger_person_picker(page: Page, icon_x: float, y: float) -> None:
+    offsets = [0, -4, 4]
+    for offset in offsets:
+        page.mouse.click(icon_x + offset, y)
+        page.wait_for_timeout(120)
+        page.mouse.dblclick(icon_x + offset, y)
+        page.wait_for_timeout(180)
+
+
 def _select_person(page: Page, selectors: dict[str, str], task: TaskRecord, timeout: int) -> None:
     query_value = task.employee_id or task.employee_name
     fill_locator(page, selectors["person_query_input"], query_value, timeout)
-    click_person_search(page, timeout)
-    wait_person_search_results(page, timeout)
+    _click_person_search(page, timeout)
+    _wait_person_search_results(page, timeout)
 
     modal = modal_scope(page)
     if task.employee_id and modal.get_by_text(task.employee_id, exact=False).count() == 0:
@@ -232,7 +550,7 @@ def _select_person(page: Page, selectors: dict[str, str], task: TaskRecord, time
     if task.employee_name and modal.get_by_text(task.employee_name, exact=False).count() == 0:
         raise RuntimeError(f"搜索后未找到目标人员或结果尚未加载完成: {query_value}")
 
-    select_person_radio(modal, timeout)
+    _select_person_radio(modal, timeout)
 
 
 def _verify_first_row(page: Page, selectors: dict[str, str], task: TaskRecord, timeout: int) -> None:
@@ -250,7 +568,7 @@ def _verify_first_row(page: Page, selectors: dict[str, str], task: TaskRecord, t
                 wait_url_contains(page, "/hr/employee/archive", min(verify_timeout, 5000))
             except Exception:
                 pass
-            wait_archive_list_ready(page, min(verify_timeout, 12000))
+            _wait_archive_list_ready(page, min(verify_timeout, 12000))
             row = _wait_first_visible_archive_row(page, selectors, verify_timeout)
             row_text = row.inner_text(timeout=1200)
             if task.employee_id not in row_text:
@@ -323,22 +641,22 @@ def _map_value(mapping: dict[str, Any], key: str, value: str) -> str:
 
 
 def _open_upload_page(page: Page, selectors: dict[str, str], base_url: str, timeout: int) -> None:
-    if is_upload_page(page):
+    if _is_upload_page(page):
         return
 
     last_error: Exception | None = None
     attempts = [
-        lambda: click_visible_upload_entry(page, timeout),
+        lambda: _click_visible_upload_entry(page, timeout),
         lambda: page.goto(_upload_page_url(base_url), wait_until="domcontentloaded"),
         lambda: click_locator(page, selectors["upload_entry"], timeout),
         lambda: page.get_by_role("button", name="上传档案附件").first.click(timeout=2500),
-        lambda: click_visible_upload_entry(page, timeout),
+        lambda: _click_visible_upload_entry(page, timeout),
     ]
 
     for action in attempts:
         try:
             action()
-            wait_upload_page(page, timeout)
+            _wait_upload_page(page, timeout)
             return
         except Exception as exc:
             last_error = exc

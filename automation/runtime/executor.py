@@ -34,6 +34,8 @@ class Flow(Protocol):
 
     def reset_task_context(self, page, config: dict, logger, task_id: str) -> None: ...
 
+    def build_failed_result(self, message: str): ...
+
 
 @dataclass(slots=True)
 class BatchSummary:
@@ -103,9 +105,7 @@ def execute_batch(
                     result = flow.run_task(page, config, task, logger, step_log)
                 except Exception as exc:
                     logger.exception(f"[TASK {task.task_id}] FAILED {exc}")
-                    from flows.reimbursement_fill.task_model import ReimbursementTaskResult
-
-                    result = ReimbursementTaskResult(status="failed", message=str(exc))
+                    result = flow.build_failed_result(str(exc))
                 if result.status != "success" and config["runtime"].get("screenshot_on_error", True):
                     try:
                         screenshot_path = get_cached_browser_context_value(page, "_last_failure_screenshot_path")

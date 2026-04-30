@@ -81,6 +81,23 @@ def get_cached_active_working_page(page: Any, cache_key: str = "_active_working_
     return cached_page
 
 
+def page_candidates(page: Any, include_main_frame: bool = False) -> list[Any]:
+    candidates: list[Any] = [page]
+    try:
+        frames = list(getattr(page, "frames", []) or [])
+        for frame in frames:
+            if not include_main_frame:
+                try:
+                    if frame == page.main_frame:
+                        continue
+                except Exception:
+                    pass
+            append_unique_context(candidates, {id(item) for item in candidates}, frame)
+    except Exception:
+        pass
+    return candidates
+
+
 def resolve_selector_context(
     page: Any,
     selectors: dict[str, str],
@@ -201,6 +218,7 @@ __all__ = [
     "get_cached_browser_context_value",
     "get_cached_page_context_matching",
     "get_cached_page_context",
+    "page_candidates",
     "resolve_context_by_markers",
     "resolve_first_visible_frame_context",
     "resolve_selector_context",

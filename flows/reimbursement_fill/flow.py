@@ -17,13 +17,8 @@ from automation.core.actions import (
 )
 from automation.core.contexts import (
     append_unique_context as _append_unique_context,
-    cache_active_working_page as _cache_active_working_page_value,
     cache_browser_context_value,
-    cache_page_context,
     candidate_contexts_for_selector as _candidate_contexts_for_selector_base,
-    context_debug_name as _context_debug_name_base,
-    get_cached_page_context_matching,
-    get_cached_active_working_page as _get_cached_active_working_page_value,
     get_cached_page_context,
     resolve_context_by_markers as _resolve_context_by_markers_base,
     resolve_first_visible_frame_context,
@@ -38,7 +33,6 @@ from automation.core.waits import (
 from automation.core.ui_patterns import (
     click_dialog_button_if_needed,
     has_visible_dialog,
-    wait_for_condition,
     wait_for_selected_tab_closed as _wait_for_selected_tab_closed_base,
     wait_for_tab_closed_and_state as _wait_for_tab_closed_and_state_base,
 )
@@ -48,6 +42,82 @@ from automation.runtime.steps import (
     log_task_step as _step,
     run_batch_step as _timed_batch_step,
     run_task_substep as _timed_substep,
+)
+from flows.reimbursement_fill.cleanup import (
+    diagnose_cleanup_state as _diagnose_cleanup_state_base,
+    select_cleanup_working_page as _select_cleanup_working_page_base,
+)
+from flows.reimbursement_fill.bill_rules import (
+    bill_page_markers as _bill_page_markers_base,
+    bill_subtype_candidates as _bill_subtype_candidates_base,
+    bill_tab_click_selector_candidates as _bill_tab_click_selector_candidates_base,
+    bill_tab_selector_candidates as _bill_tab_selector_candidates_base,
+    dedupe_selectors as _dedupe_selectors_base,
+    detail_button_selector_candidates as _detail_button_selector_candidates_base,
+    is_city_transport_bill as _is_city_transport_bill_base,
+    resolve_task_bill_subtype as _resolve_task_bill_subtype_base,
+)
+from flows.reimbursement_fill.bill_creation import (
+    click_bill_subtype_link as _click_bill_subtype_link_base,
+    diagnose_new_bill_menu as _diagnose_new_bill_menu_base,
+    first_visible_locator as _first_visible_locator_base,
+    follow_new_page_after_bill_click as _follow_new_page_after_bill_click_base,
+    is_new_bill_menu_open as _is_new_bill_menu_open_base,
+    open_new_bill_menu as _open_new_bill_menu_base,
+)
+from flows.reimbursement_fill.contexts import (
+    cache_active_working_page as _cache_active_working_page_base,
+    cache_bill_form_context as _cache_bill_form_context_base,
+    cache_bill_outer_context as _cache_bill_outer_context_base,
+    cache_electronic_image_context as _cache_electronic_image_context_base,
+    cache_reimbursement_context as _cache_reimbursement_context_base,
+    context_debug_name as _context_debug_name_base,
+    get_cached_active_working_page as _get_cached_active_working_page_base,
+    get_cached_bill_form_context as _get_cached_bill_form_context_base,
+    get_cached_bill_outer_context as _get_cached_bill_outer_context_base,
+    get_cached_electronic_image_context as _get_cached_electronic_image_context_base,
+    get_cached_reimbursement_context as _get_cached_reimbursement_context_base,
+    page_candidates as _page_candidates_base,
+)
+from flows.reimbursement_fill.image_upload import (
+    diagnose_upload_dialog as _diagnose_upload_dialog_base,
+    ensure_upload_file_ready as _ensure_upload_file_ready_base,
+    ensure_upload_files_selected as _ensure_upload_files_selected_base,
+    set_upload_files as _set_upload_files_base,
+)
+from flows.reimbursement_fill.invoice_recognition import (
+    observe_recognition_outcome as _observe_recognition_outcome_base,
+)
+from flows.reimbursement_fill.navigation import (
+    activate_by_keyboard as _activate_by_keyboard_base,
+    attempt_finance_share_activation as _attempt_finance_share_activation_base,
+    click_go_reimbursement_fast as _click_go_reimbursement_fast_base,
+    click_optional as _click_optional_base,
+    click_tree_title_fast as _click_tree_title_fast_base,
+    ensure_tree_node_expanded as _ensure_tree_node_expanded_base,
+    is_finance_share_page as _is_finance_share_page_base,
+    safe_click_target as _safe_click_target_base,
+    visible_tree_node as _visible_tree_node_base,
+    wait_iam_login_state as _wait_iam_login_state_base,
+)
+from flows.reimbursement_fill.page_state import (
+    ensure_electronic_image_page as _ensure_electronic_image_page_base,
+    ensure_my_reimbursement_page as _ensure_my_reimbursement_page_base,
+    ensure_reimbursement_bill_tab_closed as _ensure_reimbursement_bill_tab_closed_base,
+    ensure_reimbursement_saved as _ensure_reimbursement_saved_base,
+    ensure_target_reimbursement_bill_page as _ensure_target_reimbursement_bill_page_base,
+    ensure_upload_dialog_open as _ensure_upload_dialog_open_base,
+    has_selected_bill_tab_title as _has_selected_bill_tab_title_base,
+    has_selected_bill_tab_title_fast as _has_selected_bill_tab_title_fast_base,
+    is_electronic_image_page as _is_electronic_image_page_base,
+    is_electronic_image_page_precheck as _is_electronic_image_page_precheck_base,
+    is_fast_clean_reimbursement_state as _is_fast_clean_reimbursement_state_base,
+    is_my_reimbursement_page as _is_my_reimbursement_page_base,
+    is_reimbursement_saved as _is_reimbursement_saved_base,
+    is_target_reimbursement_bill_page as _is_target_reimbursement_bill_page_base,
+    is_target_reimbursement_bill_page_precheck as _is_target_reimbursement_bill_page_precheck_base,
+    is_upload_dialog_open as _is_upload_dialog_open_base,
+    wait_for_selected_bill_tab_title as _wait_for_selected_bill_tab_title_base,
 )
 from flows.reimbursement_fill.task_loader import load_tasks, validate_tasks
 from flows.reimbursement_fill.task_model import ReimbursementTaskRecord, ReimbursementTaskResult
@@ -81,6 +151,9 @@ class ReimbursementFillFlow:
 
     def reset_task_context(self, page, config: dict, logger, task_id: str) -> None:
         reset_task_context(page, config, logger, task_id)
+
+    def build_failed_result(self, message: str):
+        return ReimbursementTaskResult(status="failed", message=message)
 
 
 def initialize_batch_session(page, config: dict[str, Any], logger: logging.Logger) -> None:
@@ -296,8 +369,11 @@ def _cleanup_failed_reimbursement_task(
     task_id: str,
 ) -> list[str]:
     actions: list[str] = []
-    working_page = _select_cleanup_working_page(page, working_page, actions)
-    logger.info(f"[TASK {task_id}] [context_reset_diag] INFO {_diagnose_cleanup_state(page, working_page, selectors)}")
+    working_page = _select_cleanup_working_page_base(page, working_page, actions)
+    logger.info(
+        f"[TASK {task_id}] [context_reset_diag] INFO "
+        f"{_diagnose_cleanup_state_base(page, working_page, selectors, _is_electronic_image_page, _has_selected_bill_tab_title, _is_my_reimbursement_page)}"
+    )
     _clear_reimbursement_runtime_caches(working_page, keep_active_page=True)
 
     try:
@@ -352,101 +428,23 @@ def capture_screenshot(page, screenshot_dir: str, task: ReimbursementTaskRecord)
 
 
 def _resolve_task_bill_subtype(task: ReimbursementTaskRecord, mapping: dict[str, Any]) -> str:
-    raw_value = str(getattr(task, "bill_type", "") or "").strip()
-    subtype_mapping = mapping.get("bill_subtype", {}) or {}
-    if raw_value in subtype_mapping:
-        return str(subtype_mapping.get(raw_value, raw_value)).strip()
-    if raw_value:
-        for mapped_value in subtype_mapping.values():
-            mapped_text = str(mapped_value).strip()
-            if mapped_text == raw_value:
-                return mapped_text
-    if "市内交通" in raw_value or "车费" in raw_value:
-        return str(subtype_mapping.get("city_transport", "市内交通费报销")).strip()
-    if "业务招待" in raw_value:
-        return str(subtype_mapping.get("business_entertainment", "业务招待费报销")).strip()
-    return raw_value or str(subtype_mapping.get("business_entertainment", "业务招待费报销")).strip()
+    return _resolve_task_bill_subtype_base(task, mapping)
 
 
 def _is_city_transport_bill(task: ReimbursementTaskRecord, mapping: dict[str, Any]) -> bool:
-    return "市内交通费报销" in _resolve_task_bill_subtype(task, mapping)
+    return _is_city_transport_bill_base(task, mapping)
 
 
 def _bill_page_markers(selectors: dict[str, str], bill_subtype: str) -> list[str]:
-    markers = [
-        selectors.get("electronic_image_tab_entry", ""),
-        selectors.get("save_button", ""),
-        "text=电子影像",
-        "text=保存",
-    ]
-    if "市内交通费报销" in bill_subtype:
-        markers.extend(
-            [
-                selectors.get("city_transport_detail_tab_select", ""),
-                selectors.get("attachment_count_input", ""),
-                selectors.get("payment_purpose_input", ""),
-                selectors.get("payment_purpose_input_fallback", ""),
-                "text=费用分摊",
-                "text=付款用途",
-                "text=报账金额",
-                'xpath=//label[contains(normalize-space(.),"附件个数")]',
-                'xpath=//label[contains(normalize-space(.),"付款用途")]',
-                'xpath=//label[contains(normalize-space(.),"报账金额")]',
-            ]
-        )
-    else:
-        markers.extend(
-            [
-                selectors.get("detail_tab_select", ""),
-                selectors.get("business_unit_input", ""),
-                selectors.get("payment_purpose_input", ""),
-                selectors.get("payment_purpose_input_fallback", ""),
-                "text=报销明细信息",
-                "text=业务单位",
-                "text=付款用途",
-                'xpath=//label[contains(normalize-space(.),"业务单位")]',
-                'xpath=//label[contains(normalize-space(.),"付款用途")]',
-            ]
-        )
-    return markers
+    return _bill_page_markers_base(selectors, bill_subtype)
 
 
 def _dedupe_selectors(candidates: list[str]) -> list[str]:
-    seen: set[str] = set()
-    result: list[str] = []
-    for candidate in candidates:
-        if not candidate or candidate in seen:
-            continue
-        seen.add(candidate)
-        result.append(candidate)
-    return result
+    return _dedupe_selectors_base(candidates)
 
 
 def _detail_button_selector_candidates(configured_selector: str, action: str) -> list[str]:
-    candidates: list[str] = []
-    if configured_selector:
-        candidates.append(configured_selector)
-    if action == "add":
-        candidates.extend(
-            [
-                'a[data-action="AddItemCommonBXFY"][data-tabpanel="XtraTabPage3"]',
-                'a[data-action="AddItemCommonFP"][data-tabpanel="XtraTabPageFP"]',
-                'xpath=//a[@data-tabpanel="XtraTabPage3"][.//span[normalize-space(.)="增加"]]',
-                'xpath=//a[@data-tabpanel="XtraTabPageFP"][.//span[normalize-space(.)="增加"]]',
-                'xpath=//a[contains(@data-action,"AddItemCommon")][.//span[normalize-space(.)="增加"]]',
-            ]
-        )
-    else:
-        candidates.extend(
-            [
-                'a[data-action="RemoveSelectCommonBXFY"][data-tabpanel="XtraTabPage3"]',
-                'a[data-action="RemoveSelectCommonFP"][data-tabpanel="XtraTabPageFP"]',
-                'xpath=//a[@data-tabpanel="XtraTabPage3"][.//span[normalize-space(.)="删除"]]',
-                'xpath=//a[@data-tabpanel="XtraTabPageFP"][.//span[normalize-space(.)="删除"]]',
-                'xpath=//a[contains(@data-action,"RemoveSelectCommon")][.//span[normalize-space(.)="删除"]]',
-            ]
-        )
-    return _dedupe_selectors(candidates)
+    return _detail_button_selector_candidates_base(configured_selector, action)
 
 
 def _login_iam(page, config: dict[str, Any], logger: logging.Logger) -> None:
@@ -1075,7 +1073,7 @@ def _recognize_uploaded_invoice(
     step_log: StepLogger,
 ) -> None:
     click_timeout = min(timeout, 2500)
-    detect_timeout = min(timeout, 650)
+    detect_timeout = min(timeout, 10000)
     image_context = _resolve_electronic_image_context(page, selectors)
     _timed_substep(
         logger,
@@ -1486,7 +1484,7 @@ def _resolve_bill_outer_context(page: Page, selectors: dict[str, str]) -> Locato
 
 
 def _cache_bill_outer_context(page: Page, context: LocatorContext | None) -> None:
-    cache_page_context(page, "_bill_outer_context", context)
+    _cache_bill_outer_context_base(page, context)
 
 
 def _clear_reimbursement_runtime_caches(page: Page, keep_active_page: bool = False) -> None:
@@ -1499,38 +1497,15 @@ def _clear_reimbursement_runtime_caches(page: Page, keep_active_page: bool = Fal
 
 
 def _get_cached_bill_outer_context(page: Page) -> LocatorContext | None:
-    return get_cached_page_context_matching(
-        page,
-        "_bill_outer_context",
-        [
-            'text=电子影像',
-            'text=保存',
-            'text=报销明细信息',
-            'text=费用分摊',
-            'text=关闭',
-        ],
-        _wait_visible,
-        40,
-    )
+    return _get_cached_bill_outer_context_base(page, _wait_visible)
 
 
 def _cache_reimbursement_context(page: Page, context: LocatorContext | None) -> None:
-    cache_page_context(page, "_reimbursement_context", context)
+    _cache_reimbursement_context_base(page, context)
 
 
 def _get_cached_reimbursement_context(page: Page) -> LocatorContext | None:
-    return get_cached_page_context_matching(
-        page,
-        "_reimbursement_context",
-        [
-        'h2:has-text("新建单据")',
-        'text=草稿箱',
-        'text=业务招待费报销',
-        'text=市内交通费报销',
-        ],
-        _wait_visible,
-        50,
-    )
+    return _get_cached_reimbursement_context_base(page, _wait_visible)
 
 
 def _resolve_bill_form_context(page: Page, selectors: dict[str, str]) -> LocatorContext:
@@ -1680,27 +1655,11 @@ def _cache_target_bill_context_fast(
 
 
 def _cache_bill_form_context(page: Page, context: LocatorContext | None) -> None:
-    cache_page_context(page, "_bill_form_context", context)
+    _cache_bill_form_context_base(page, context)
 
 
 def _get_cached_bill_form_context(page: Page) -> LocatorContext | None:
-    context = get_cached_page_context_matching(
-        page,
-        "_bill_form_context",
-        [
-        'text=电子影像',
-        'text=报销明细信息',
-        'text=费用分摊',
-        'text=保存',
-        'text=业务招待费报销',
-        'text=市内交通费报销',
-        ],
-        _wait_visible,
-        50,
-    )
-    if context is not None and hasattr(context, "main_frame"):
-        return None
-    return context
+    return _get_cached_bill_form_context_base(page, _wait_visible)
 
 
 def _resolve_inner_bill_iframe(parent: LocatorContext, selectors: dict[str, str]) -> LocatorContext | None:
@@ -2065,230 +2024,47 @@ def _click_electronic_image_tab(
 
 
 def _open_new_bill_menu(page: Page, context: LocatorContext, selectors: dict[str, str], timeout: int) -> None:
-    if _is_new_bill_menu_open(context, page, selectors, 160):
-        return
-
-    trigger_selectors: list[tuple[str, str]] = [
-        ("new_bill_header_container", 'div.pros.subpage'),
-        ("new_bill_header_h2", 'div.pros.subpage > h2'),
-    ]
-
-    for _label, selector in reversed(trigger_selectors):
-        if not selector:
-            continue
-        try:
-            if _click_latest_visible_element(context, selector):
-                page.wait_for_timeout(40)
-                if _is_new_bill_menu_open(context, page, selectors, 80):
-                    return
-        except Exception:
-            continue
-        try:
-            js_result = context.evaluate(
-                """
-                (sel) => {
-                  const isVisible = (el) => !!el && !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
-                  const nodes = [...document.querySelectorAll(sel)].filter(isVisible);
-                  const el = nodes[nodes.length - 1];
-                  if (!el) return false;
-                  ['mouseover', 'mouseenter', 'mousedown', 'mouseup', 'click'].forEach((type) => {
-                    el.dispatchEvent(new MouseEvent(type, { bubbles: true }));
-                  });
-                  return true;
-                }
-                """,
-                selector,
-            )
-            if js_result:
-                page.wait_for_timeout(40)
-                if _is_new_bill_menu_open(context, page, selectors, 80):
-                    return
-        except Exception:
-            continue
-
-    attempts: list[str] = []
-    per_wait = 30
-    end_at = perf_counter() + (min(timeout, 900) / 1000)
-    while perf_counter() < end_at:
-        for label, selector in trigger_selectors:
-            if not selector:
-                continue
-            locator = _first_visible_locator(context, selector, 50)
-            try:
-                if locator is None:
-                    attempts.append(f"{label}:visible=false")
-                    continue
-
-                attempts.append(f"{label}:visible=true")
-                try:
-                    locator.scroll_into_view_if_needed(timeout=120)
-                    attempts.append(f"{label}:scroll=ok")
-                except Exception as exc:
-                    attempts.append(f"{label}:scroll=fail:{type(exc).__name__}")
-
-                try:
-                    locator.click(timeout=120)
-                    attempts.append(f"{label}:click=ok")
-                except Exception as exc:
-                    attempts.append(f"{label}:click=fail:{type(exc).__name__}")
-                page.wait_for_timeout(per_wait)
-                if _is_new_bill_menu_open(context, page, selectors, 100):
-                    attempts.append(f"{label}:menu_open_after_click=true")
-                    return
-
-                try:
-                    locator.click(timeout=120, force=True)
-                    attempts.append(f"{label}:force_click=ok")
-                except Exception as exc:
-                    attempts.append(f"{label}:force_click=fail:{type(exc).__name__}")
-                page.wait_for_timeout(per_wait)
-                if _is_new_bill_menu_open(context, page, selectors, 100):
-                    attempts.append(f"{label}:menu_open_after_force_click=true")
-                    return
-                try:
-                    js_result = context.evaluate(
-                        """
-                        (sel) => {
-                          if (sel.startsWith('xpath=')) return 'skip-xpath-js';
-                          const isVisible = (el) => !!el && !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
-                          const nodes = [...document.querySelectorAll(sel)].filter(isVisible);
-                          if (!nodes.length) return 'no-visible-node';
-                          const el = nodes[0];
-                          ['mouseover', 'mouseenter', 'mousedown', 'mouseup', 'click'].forEach(type => {
-                            el.dispatchEvent(new MouseEvent(type, { bubbles: true }));
-                          });
-                          return `js-dispatched:${nodes.length}`;
-                        }
-                        """,
-                        selector,
-                    )
-                    attempts.append(f"{label}:js={js_result}")
-                except Exception as exc:
-                    attempts.append(f"{label}:js=fail:{type(exc).__name__}")
-                page.wait_for_timeout(per_wait)
-                if _is_new_bill_menu_open(context, page, selectors, 100):
-                    attempts.append(f"{label}:menu_open_after_js=true")
-                    return
-            except Exception as exc:
-                attempts.append(f"{label}:outer_fail:{type(exc).__name__}")
-        page.wait_for_timeout(per_wait)
-
-    raise RuntimeError(f"未成功展开‘新建单据’菜单 attempts={attempts}")
+    _open_new_bill_menu_base(
+        page,
+        context,
+        selectors,
+        timeout,
+        _is_new_bill_menu_open,
+        _click_latest_visible_element,
+        _first_visible_locator,
+    )
 
 
 def _is_new_bill_menu_open(context: LocatorContext, page: Page, selectors: dict[str, str], timeout: int) -> bool:
-    marker_selectors = [
-        'li.prosahover',
-        'div.prosmore:not(.hide)',
-        selectors.get("bill_type_expense", ""),
-        selectors.get("bill_subtype_business_entertainment", ""),
-        selectors.get("bill_subtype_city_transport", ""),
-    ]
-    return _wait_markers_in_context(context, page, marker_selectors, timeout)
+    return _is_new_bill_menu_open_base(context, page, selectors, timeout, _wait_markers_in_context)
 
 
 def _first_visible_locator(context: LocatorContext, selector: str, timeout_ms: int):
-    if not selector:
-        return None
-    try:
-        locator = context.locator(selector)
-        count = locator.count()
-        for idx in range(count):
-            candidate = locator.nth(idx)
-            if _wait_visible(candidate, timeout_ms):
-                return candidate
-    except Exception:
-        return None
-    return None
+    return _first_visible_locator_base(context, selector, timeout_ms, _wait_visible)
 
 
 def _diagnose_new_bill_menu(page: Page, context: LocatorContext, selectors: dict[str, str]) -> None:
-    info = {}
-    for key, selector in {
-        "menu_visible": 'li.prosahover',
-        "submenu_visible": 'div.prosmore:not(.hide)',
-        "expense_link": selectors.get("bill_type_expense", ""),
-        "business_entertainment_link": selectors.get("bill_subtype_business_entertainment", ""),
-        "city_transport_link": selectors.get("bill_subtype_city_transport", ""),
-        "xselector_combo": '#XSelectorLX + span.combo',
-    }.items():
-        if not selector:
-            continue
-        try:
-            info[key] = context.locator(selector).count()
-        except Exception:
-            info[key] = "error"
-    if not (info.get("expense_link") or info.get("business_entertainment_link") or info.get("city_transport_link")):
-        raise RuntimeError(f"新建单据菜单诊断结果: {info}")
+    _diagnose_new_bill_menu_base(page, context, selectors)
 
 
 def _bill_subtype_candidates(selectors: dict[str, str], bill_subtype: str) -> list[str]:
-    candidates: list[str] = []
-    if "市内交通费报销" in bill_subtype:
-        candidates.append(selectors.get("bill_subtype_city_transport", ""))
-    if "业务招待费报销" in bill_subtype:
-        candidates.extend(
-            [
-                selectors.get("bill_subtype_business_entertainment", ""),
-                '[id="7453727a-449f-4b2d-8a26-b3d99ba359fc"]',
-            ]
-        )
-    candidates.extend(
-        [
-            f'a.td:has-text("{bill_subtype}")',
-            f'xpath=//a[contains(@class,"td") and normalize-space(.)="{bill_subtype}"]',
-        ]
-    )
-    return candidates
+    return _bill_subtype_candidates_base(selectors, bill_subtype)
 
 
 def _click_bill_subtype_link(page: Page, context: LocatorContext, selectors: dict[str, str], bill_subtype: str, timeout: int) -> None:
-    candidates = _bill_subtype_candidates(selectors, bill_subtype)
-    last_error: Exception | None = None
-    end_at = perf_counter() + (timeout / 1000)
-    while perf_counter() < end_at:
-        for selector in candidates:
-            if not selector:
-                continue
-            locator = _first_visible_locator(context, selector, 250)
-            if locator is None:
-                continue
-            try:
-                locator.scroll_into_view_if_needed(timeout=300)
-            except Exception:
-                pass
-            try:
-                locator.click(timeout=300)
-                return
-            except Exception as exc:
-                last_error = exc
-            try:
-                locator.click(timeout=300, force=True)
-                return
-            except Exception as exc:
-                last_error = exc
-            page.wait_for_timeout(60)
-    if last_error is not None:
-        raise last_error
-    raise RuntimeError(f"未找到可点击的‘{bill_subtype}’入口")
+    _click_bill_subtype_link_base(
+        page,
+        context,
+        selectors,
+        bill_subtype,
+        timeout,
+        _bill_subtype_candidates,
+        _first_visible_locator,
+    )
 
 
 def _follow_new_page_after_bill_click(page: Page, timeout: int) -> Page:
-    end_at = perf_counter() + (min(timeout, 600) / 1000)
-    known_pages = list(page.context.pages)
-    while perf_counter() < end_at:
-        current_pages = list(page.context.pages)
-        for candidate in reversed(current_pages):
-            if candidate.is_closed():
-                continue
-            if candidate not in known_pages:
-                try:
-                    candidate.wait_for_load_state("domcontentloaded", timeout=300)
-                except Exception:
-                    pass
-                return candidate
-        page.wait_for_timeout(50)
-    return page
+    return _follow_new_page_after_bill_click_base(page, timeout)
 
 
 def _resolve_electronic_image_context(page: Page, selectors: dict[str, str]) -> LocatorContext:
@@ -2337,21 +2113,11 @@ def _resolve_upload_dialog_context(page: Page, selectors: dict[str, str]) -> Loc
 
 
 def _cache_electronic_image_context(page: Page, context: LocatorContext | None) -> None:
-    cache_page_context(page, "_reimbursement_electronic_image_context", context)
+    _cache_electronic_image_context_base(page, context)
 
 
 def _get_cached_electronic_image_context(page: Page) -> LocatorContext | None:
-    return get_cached_page_context_matching(
-        page,
-        "_reimbursement_electronic_image_context",
-        [
-        'text=本地上传',
-        '#btnInOCR',
-        '.sortwrap .thumb',
-        ],
-        _wait_visible,
-        60,
-    )
+    return _get_cached_electronic_image_context_base(page, _wait_visible)
 
 
 def _resolve_context_by_markers(page: Page, marker_selectors: list[str], selectors: dict[str, str]) -> LocatorContext | None:
@@ -2396,10 +2162,7 @@ def _open_business_entertainment_bill_direct(context: LocatorContext, config: di
 
 
 def _set_upload_files(context: LocatorContext, selector: str, file_paths: list[str], timeout: int) -> None:
-    locator = context.locator(selector).first
-    if not _wait_visible(locator, min(timeout, 800)):
-        raise RuntimeError("上传弹窗中未检测到文件选择控件")
-    locator.set_input_files(file_paths, timeout=timeout)
+    _set_upload_files_base(context, selector, file_paths, timeout, _wait_visible)
 
 
 def _fill_locator_value(context: LocatorContext, selector: str, value: str, timeout: int, error_message: str) -> None:
@@ -2738,37 +2501,11 @@ def _click_any_locator_in_contexts(
 
 
 def _bill_tab_selector_candidates(configured_selector: str, tab_text: str) -> list[str]:
-    candidates: list[str] = []
-    if configured_selector:
-        candidates.append(configured_selector)
-    candidates.extend(
-        [
-            f'text={tab_text}',
-            f'xpath=//li[contains(@class,"tabs-selected")]//span[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]',
-            f'xpath=//li//a[contains(@class,"tabs-inner")]//span[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]',
-            f'xpath=//li//a[contains(@class,"tabs-inner")][.//span[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]]',
-            f'xpath=//*[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]',
-            f'xpath=//a[contains(@class,"tabs-inner")]//*[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]',
-            f'xpath=//span[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]',
-        ]
-    )
-    return _dedupe_selectors(candidates)
+    return _bill_tab_selector_candidates_base(configured_selector, tab_text)
 
 
 def _bill_tab_click_selector_candidates(configured_selector: str, tab_text: str) -> list[str]:
-    candidates: list[str] = []
-    if configured_selector:
-        candidates.append(configured_selector)
-    candidates.extend(
-        [
-            f'xpath=//li//a[contains(@class,"tabs-inner")][.//span[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]]',
-            f'xpath=//a[contains(@class,"tabs-inner")][.//span[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]]',
-            f'xpath=//span[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]/ancestor::a[contains(@class,"tabs-inner")][1]',
-            f'xpath=//li//span[contains(@class,"tabs-title") and normalize-space(.)="{tab_text}"]',
-            f'text={tab_text}',
-        ]
-    )
-    return _dedupe_selectors(candidates)
+    return _bill_tab_click_selector_candidates_base(configured_selector, tab_text)
 
 
 def _candidate_business_detail_contexts(
@@ -3692,61 +3429,6 @@ def _diagnose_business_detail_grid(
     return " ".join(attempts)
 
 
-def _select_cleanup_working_page(page: Page, working_page: Page, actions: list[str]) -> Page:
-    try:
-        if not working_page.is_closed():
-            return working_page
-        actions.append("working_page_closed")
-    except Exception:
-        actions.append("working_page_closed")
-    try:
-        if not page.is_closed():
-            actions.append("cleanup_fallback=page")
-            return page
-    except Exception:
-        pass
-    try:
-        for candidate in page.context.pages:
-            try:
-                if not candidate.is_closed():
-                    actions.append("cleanup_fallback=context_page")
-                    return candidate
-            except Exception:
-                continue
-    except Exception:
-        pass
-    return working_page
-
-
-def _diagnose_cleanup_state(page: Page, working_page: Page, selectors: dict[str, str]) -> str:
-    parts: list[str] = []
-    try:
-        parts.append(f"working_closed={working_page.is_closed()}")
-    except Exception as exc:
-        parts.append(f"working_closed=error:{type(exc).__name__}")
-    try:
-        parts.append(f"working_url={getattr(working_page, 'url', '')}")
-    except Exception as exc:
-        parts.append(f"working_url=error:{type(exc).__name__}")
-    try:
-        parts.append(f"is_electronic_image={_is_electronic_image_page(working_page, selectors, 80)}")
-    except Exception as exc:
-        parts.append(f"is_electronic_image=error:{type(exc).__name__}")
-    try:
-        parts.append(f"selected_business_tab={_has_selected_bill_tab_title(working_page, '业务招待费报销', 60)}")
-    except Exception as exc:
-        parts.append(f"selected_business_tab=error:{type(exc).__name__}")
-    try:
-        parts.append(f"selected_transport_tab={_has_selected_bill_tab_title(working_page, '市内交通费报销', 60)}")
-    except Exception as exc:
-        parts.append(f"selected_transport_tab=error:{type(exc).__name__}")
-    try:
-        parts.append(f"is_my_reimbursement={_is_my_reimbursement_page(working_page, selectors, 120)}")
-    except Exception as exc:
-        parts.append(f"is_my_reimbursement=error:{type(exc).__name__}")
-    return " ".join(parts)
-
-
 def _fill_city_transport_remark_cell(
     row,
     page: Page,
@@ -3799,68 +3481,11 @@ def _fill_city_transport_remark_cell(
 
 
 def _ensure_upload_files_selected(context: LocatorContext, file_paths: list[str], timeout: int) -> None:
-    file_names = [Path(path).name for path in file_paths]
-    success_selectors = [
-        '.state-complete',
-        '.upload-state-done',
-        '.upload-success',
-        '.uploadBtn.state-finish',
-        '.uploadBtn.state-confirm',
-        'text=上传成功',
-        'text=成功',
-    ]
-    start_button_selector = '.uploadBtn'
-    context.wait_for_timeout(80) if hasattr(context, "wait_for_timeout") else None
-    end_at = perf_counter() + (min(timeout, 1800) / 1000)
-    while perf_counter() < end_at:
-        for selector in success_selectors:
-            try:
-                if _wait_visible(context.locator(selector).first, 180):
-                    return
-            except Exception:
-                continue
-        for file_name in file_names:
-            try:
-                if _wait_visible(context.get_by_text(file_name, exact=False).first, 180):
-                    try:
-                        if not _wait_visible(context.locator(start_button_selector).first, 120):
-                            return
-                    except Exception:
-                        return
-            except Exception:
-                continue
-        try:
-            if _wait_visible(context.locator('.webuploader-queue, .filelist, .upload-list').first, 180):
-                try:
-                    if not _wait_visible(context.locator(start_button_selector).first, 120):
-                        return
-                except Exception:
-                    return
-        except Exception:
-            pass
-        context.wait_for_timeout(40) if hasattr(context, "wait_for_timeout") else None
-    raise RuntimeError(f"上传动作后未检测到明确完成标志，file_names={file_names}")
+    _ensure_upload_files_selected_base(context, file_paths, timeout)
 
 
 def _ensure_upload_file_ready(context: LocatorContext, selectors: dict[str, str], timeout: int) -> None:
-    marker_selectors = [
-        selectors.get("file_input", ""),
-        selectors.get("choose_file_button", ""),
-        '#filePicker input[type="file"]',
-        '#filePicker .webuploader-pick',
-    ]
-    end_at = perf_counter() + (timeout / 1000)
-    while perf_counter() < end_at:
-        for selector in marker_selectors:
-            if not selector:
-                continue
-            try:
-                if _wait_visible(context.locator(selector).first, 100):
-                    return
-            except Exception:
-                continue
-        context.wait_for_timeout(30) if hasattr(context, "wait_for_timeout") else None
-    raise RuntimeError("未检测到已就绪的‘选择文件’控件")
+    _ensure_upload_file_ready_base(context, selectors, timeout, _wait_visible)
 
 
 def _trigger_open_add_bill_page_direct(context: LocatorContext, timeout: int) -> None:
@@ -4018,127 +3643,85 @@ def _is_new_bill_dropdown_open(page: Page, selectors: dict[str, str], timeout: i
 
 
 def _ensure_my_reimbursement_page(page: Page, selectors: dict[str, str], timeout: int) -> None:
-    if not _is_my_reimbursement_page(page, selectors, timeout):
-        raise RuntimeError("未成功进入‘我要报账’页面，未检测到页面到达标志")
+    _ensure_my_reimbursement_page_base(page, selectors, timeout, _is_my_reimbursement_page)
 
 
 def _ensure_target_reimbursement_bill_page(page: Page, selectors: dict[str, str], bill_subtype: str, timeout: int) -> None:
-    if not _is_target_reimbursement_bill_page(page, selectors, bill_subtype, timeout):
-        raise RuntimeError(f"未成功进入‘{bill_subtype}’单据页，未检测到页面到达标志")
+    _ensure_target_reimbursement_bill_page_base(page, selectors, bill_subtype, timeout, _is_target_reimbursement_bill_page)
 
 
 def _is_my_reimbursement_page(page: Page, selectors: dict[str, str], timeout: int) -> bool:
-    context = _resolve_reimbursement_context(page, selectors)
-    marker_selectors = [
-        selectors.get("new_bill_button", ""),
-        'h2:has-text("新建单据")',
-        'text=费用报销类',
-        'text=业务招待费报销',
-        'text=市内交通费报销',
-        'text=草稿箱',
-    ]
-    return _wait_markers_in_context(context, page, marker_selectors, timeout)
+    return _is_my_reimbursement_page_base(page, selectors, timeout, _resolve_reimbursement_context, _wait_markers_in_context)
 
 
 def _is_target_reimbursement_bill_page(page: Page, selectors: dict[str, str], bill_subtype: str, timeout: int) -> bool:
-    if _has_selected_bill_tab_title(page, bill_subtype, min(timeout, 120)):
-        return True
-    bill_context = _resolve_bill_form_context(page, selectors)
-    reimbursement_context = _resolve_reimbursement_context(page, selectors)
-    try:
-        if bill_context is reimbursement_context:
-            return False
-    except Exception:
-        pass
-    marker_selectors = _bill_page_markers(selectors, bill_subtype)
-    return _wait_markers_in_context(bill_context, page, marker_selectors, timeout)
+    return _is_target_reimbursement_bill_page_base(
+        page,
+        selectors,
+        bill_subtype,
+        timeout,
+        _has_selected_bill_tab_title,
+        _resolve_bill_form_context,
+        _resolve_reimbursement_context,
+        _bill_page_markers,
+        _wait_markers_in_context,
+    )
 
 
 def _is_target_reimbursement_bill_page_precheck(page: Page, selectors: dict[str, str], bill_subtype: str) -> bool:
-    if _has_selected_bill_tab_title(page, bill_subtype, 120):
-        return True
-    bill_context = _get_cached_bill_form_context(page)
-    if bill_context is None:
-        return False
-    marker_selectors = _bill_page_markers(selectors, bill_subtype)
-    return _wait_markers_in_context(bill_context, page, marker_selectors, 120)
+    return _is_target_reimbursement_bill_page_precheck_base(
+        page,
+        selectors,
+        bill_subtype,
+        _has_selected_bill_tab_title,
+        _get_cached_bill_form_context,
+        _bill_page_markers,
+        _wait_markers_in_context,
+    )
 
 
 def _has_selected_bill_tab_title(page: Page, bill_subtype: str, timeout: int) -> bool:
-    title_selector = f'li.tabs-selected .tabs-title:has-text("{bill_subtype}")'
-    try:
-        return _wait_visible(page.locator(title_selector).first, timeout)
-    except Exception:
-        return False
+    return _has_selected_bill_tab_title_base(page, bill_subtype, timeout, _wait_visible)
 
 
 def _has_selected_bill_tab_title_fast(page: Page, bill_subtype: str) -> bool:
-    title_selector = f'li.tabs-selected .tabs-title:has-text("{bill_subtype}")'
-    try:
-        return page.locator(title_selector).count() > 0
-    except Exception:
-        return False
+    return _has_selected_bill_tab_title_fast_base(page, bill_subtype)
 
 
 def _is_fast_clean_reimbursement_state(page: Page, selectors: dict[str, str]) -> bool:
-    try:
-        if page.is_closed():
-            return False
-    except Exception:
-        return False
-    try:
-        if _resolve_image_system_context(page) is not None:
-            return False
-    except Exception:
-        return False
-    if _has_selected_bill_tab_title_fast(page, "业务招待费报销") or _has_selected_bill_tab_title_fast(page, "市内交通费报销"):
-        return False
-    quick_markers = [
-        selectors.get("new_bill_button", ""),
-        'h2:has-text("新建单据")',
-        'text=费用报销类',
-        'text=草稿箱',
-    ]
-    context = _get_cached_reimbursement_context(page)
-    if context is None:
-        context = _resolve_reimbursement_context(page, selectors)
-    if context is None:
-        return False
-    for selector in quick_markers:
-        if not selector:
-            continue
-        try:
-            if context.locator(selector).count() > 0:
-                return True
-        except Exception:
-            continue
-    return False
+    return _is_fast_clean_reimbursement_state_base(
+        page,
+        selectors,
+        _resolve_image_system_context,
+        _has_selected_bill_tab_title_fast,
+        _get_cached_reimbursement_context,
+        _resolve_reimbursement_context,
+    )
 
 
 def _wait_for_selected_bill_tab_title(page: Page, bill_subtype: str, timeout: int) -> bool:
-    end_at = perf_counter() + (timeout / 1000)
-    while perf_counter() < end_at:
-        if _has_selected_bill_tab_title(page, bill_subtype, 80):
-            return True
-        page.wait_for_timeout(30)
-    return False
+    return _wait_for_selected_bill_tab_title_base(page, bill_subtype, timeout, _has_selected_bill_tab_title)
 
 
 def _ensure_electronic_image_page(page: Page, selectors: dict[str, str], timeout: int) -> None:
-    if _is_electronic_image_page_precheck(page, selectors, timeout):
-        return
-    raise RuntimeError("未成功进入电子影像页面")
+    _ensure_electronic_image_page_base(page, selectors, timeout, _is_electronic_image_page_precheck)
 
 
 def _ensure_invoice_recognized(page: Page, selectors: dict[str, str], timeout: int) -> None:
-    if _is_invoice_recognized(page, selectors, min(timeout, 1800)):
-        duplicate_end_at = perf_counter() + 0.25
-        while perf_counter() < duplicate_end_at:
-            duplicate_message = _detect_duplicate_invoice_message(page, selectors)
-            if duplicate_message:
-                raise DuplicateInvoiceDetectedError(duplicate_message)
-            page.wait_for_timeout(40)
-        return
+    end_at = perf_counter() + (timeout / 1000)
+    while perf_counter() < end_at:
+        if _is_invoice_recognized(page, selectors, 180):
+            duplicate_end_at = perf_counter() + 1.5
+            while perf_counter() < duplicate_end_at:
+                duplicate_message = _detect_duplicate_invoice_message(page, selectors)
+                if duplicate_message:
+                    raise DuplicateInvoiceDetectedError(duplicate_message)
+                page.wait_for_timeout(60)
+            return
+        duplicate_message = _detect_duplicate_invoice_message(page, selectors)
+        if duplicate_message:
+            raise DuplicateInvoiceDetectedError(duplicate_message)
+        page.wait_for_timeout(60)
     duplicate_message = _detect_duplicate_invoice_message(page, selectors)
     if duplicate_message:
         raise DuplicateInvoiceDetectedError(duplicate_message)
@@ -4158,6 +3741,8 @@ def _detect_invoice_recognition_with_diagnostics(
     started_at = perf_counter()
     try:
         _ensure_invoice_recognized_diagnostic(page, selectors, timeout, logger, task_id, step_log, attempt_index=1, final_attempt=False)
+    except DuplicateInvoiceDetectedError:
+        raise
     except Exception as first_error:
         retry_message = f"RETRY 检测识别完成 delay_ms=500 first_error={type(first_error).__name__}"
         logger.info(f"[TASK {task_id}] [detect_recognize_finished] {retry_message}")
@@ -4188,7 +3773,7 @@ def _ensure_invoice_recognized_diagnostic(
     step_log(task_id, "recognize_fast_check", f"INFO {recognize_message}")
 
     duplicate_started_at = perf_counter()
-    duplicate_observe_timeout = 1200 if recognized else (1200 if attempt_index == 1 else 2600)
+    duplicate_observe_timeout = 900 if recognized else (1200 if attempt_index == 1 else 2600)
     duplicate_message: str | None = None
     if recognized:
         duplicate_message = _observe_duplicate_invoice_message(page, selectors, duplicate_observe_timeout)
@@ -4222,26 +3807,17 @@ def _observe_recognition_outcome(
     selectors: dict[str, str],
     timeout_ms: int,
 ) -> tuple[bool, str | None]:
-    end_at = perf_counter() + (timeout_ms / 1000)
-    recognized_at: float | None = None
-    post_recognize_guard_ms = min(1200, max(500, timeout_ms))
-    while perf_counter() < end_at:
-        duplicate_message = _detect_duplicate_invoice_message_fast(page, selectors, 40)
-        if duplicate_message:
-            return False, duplicate_message
-        if _is_invoice_recognized(page, selectors, 120):
-            if recognized_at is None:
-                recognized_at = perf_counter()
-            elif (perf_counter() - recognized_at) * 1000 >= post_recognize_guard_ms:
-                return True, None
-        page.wait_for_timeout(40)
-    return (recognized_at is not None), None
+    return _observe_recognition_outcome_base(
+        page,
+        selectors,
+        timeout_ms,
+        _detect_duplicate_invoice_message_fast,
+        _is_invoice_recognized,
+    )
 
 
 def _ensure_reimbursement_saved(page: Page, selectors: dict[str, str], timeout: int) -> None:
-    if _is_reimbursement_saved(page, selectors, timeout):
-        return
-    raise RuntimeError("未检测到报销单保存完成标志")
+    _ensure_reimbursement_saved_base(page, selectors, timeout, _is_reimbursement_saved)
 
 
 def _ensure_electronic_image_tab_closed(page: Page, selectors: dict[str, str], timeout: int) -> None:
@@ -4253,180 +3829,67 @@ def _ensure_electronic_image_tab_closed(page: Page, selectors: dict[str, str], t
 
 
 def _is_electronic_image_page(page: Page, selectors: dict[str, str], timeout: int) -> bool:
-    if _resolve_image_system_context(page) is not None:
-        return True
-    markers = [
-        selectors.get("local_upload_button", ""),
-        selectors.get("recognize_button", ""),
-        'text=本地上传',
-        'text=识别',
-        'text=电子影像',
-    ]
-    per_try_timeout = min(timeout, 120)
-    rounds = max(1, int(max(timeout, 180) / per_try_timeout))
-    contexts = _candidate_bill_contexts(page, selectors)
-    for _ in range(rounds):
-        for context in contexts:
-            for selector in markers:
-                if not selector:
-                    continue
-                try:
-                    if _wait_visible(context.locator(selector).first, per_try_timeout):
-                        return True
-                except Exception:
-                    continue
-        page.wait_for_timeout(25)
-    return False
+    return _is_electronic_image_page_base(
+        page,
+        selectors,
+        timeout,
+        _resolve_image_system_context,
+        _candidate_bill_contexts,
+        _wait_visible,
+    )
 
 
 def _is_electronic_image_page_precheck(page: Page, selectors: dict[str, str], timeout: int) -> bool:
-    marker_selectors = [
-        selectors.get("local_upload_button", ""),
-        selectors.get("recognize_button", ""),
-        'text=本地上传',
-        'text=识别',
-        'text=电子影像',
-    ]
-    contexts: list[LocatorContext] = []
-    seen: set[int] = set()
-
-    def add(ctx: LocatorContext | None) -> None:
-        if ctx is None:
-            return
-        marker = id(ctx)
-        if marker in seen:
-            return
-        seen.add(marker)
-        contexts.append(ctx)
-
-    add(_get_cached_electronic_image_context(page))
-    add(_get_cached_bill_form_context(page))
-    add(_get_cached_reimbursement_context(page))
-    add(page)
-
-    per_try_timeout = min(timeout, 80)
-    rounds = max(1, int(max(timeout, 80) / max(per_try_timeout, 1)))
-    for _ in range(rounds):
-        for context in contexts:
-            for selector in marker_selectors:
-                if not selector:
-                    continue
-                try:
-                    if _wait_visible(context.locator(selector).first, per_try_timeout):
-                        return True
-                except Exception:
-                    continue
-        page.wait_for_timeout(20)
-    return False
+    return _is_electronic_image_page_precheck_base(
+        page,
+        selectors,
+        timeout,
+        _get_cached_electronic_image_context,
+        _get_cached_bill_form_context,
+        _get_cached_reimbursement_context,
+        _wait_visible,
+    )
 
 
 def _is_reimbursement_saved(page: Page, selectors: dict[str, str], timeout: int) -> bool:
-    marker_selectors = [
-        selectors.get("save_success_toast", ""),
-        'text=保存成功',
-    ]
-    end_at = perf_counter() + (timeout / 1000)
-    while perf_counter() < end_at:
-        for context in _candidate_bill_contexts(page, selectors):
-            if _wait_markers_in_context(context, page, marker_selectors, 180):
-                return True
-        if _wait_any_marker(page, marker_selectors, 180):
-            return True
-        page.wait_for_timeout(50)
-    return False
+    return _is_reimbursement_saved_base(
+        page,
+        selectors,
+        timeout,
+        _candidate_bill_contexts,
+        _wait_markers_in_context,
+        _wait_any_marker,
+    )
 
 
 def _ensure_upload_dialog_open(page: Page, selectors: dict[str, str], timeout: int) -> None:
-    if _is_upload_dialog_open(page, selectors, timeout):
-        return
-    raise RuntimeError(_diagnose_upload_dialog(page, selectors))
+    _ensure_upload_dialog_open_base(page, selectors, timeout, _is_upload_dialog_open, _diagnose_upload_dialog)
 
 
 def _is_upload_dialog_open(page: Page, selectors: dict[str, str], timeout: int) -> bool:
-    dialog_host_context = _resolve_electronic_image_context(page, selectors)
-    dialog_selector = selectors.get("upload_dialog", "")
-    if dialog_selector:
-        try:
-            if _count_visible_elements(dialog_host_context, dialog_selector) > 0:
-                return True
-        except Exception:
-            pass
-    iframe_selector = selectors.get("upload_dialog_iframe", 'iframe[id^="layui-layer-iframe"]')
-    try:
-        if _count_visible_elements(dialog_host_context, iframe_selector) > 0:
-            return True
-    except Exception:
-        pass
-    return _resolve_upload_dialog_context(page, selectors) is not None
+    return _is_upload_dialog_open_base(
+        page,
+        selectors,
+        timeout,
+        _resolve_electronic_image_context,
+        _resolve_upload_dialog_context,
+        _count_visible_elements,
+    )
 
 
 def _ensure_reimbursement_bill_tab_closed(page: Page, selectors: dict[str, str], timeout: int) -> None:
-    closed = wait_for_condition(
-        page,
-        lambda: (
-            not page.locator("li.tabs-selected").filter(has_text="业务招待费报销").count()
-            and not page.locator("li.tabs-selected").filter(has_text="市内交通费报销").count()
-            and _is_my_reimbursement_page(page, selectors, 120)
-        ),
-        timeout,
-        40,
-    )
-    if not closed:
-        raise RuntimeError("关闭报销单页签后未返回我要报账列表")
+    _ensure_reimbursement_bill_tab_closed_base(page, selectors, timeout, _is_my_reimbursement_page)
 
 
 def _diagnose_upload_dialog(page: Page, selectors: dict[str, str]) -> str:
-    attempts: list[str] = []
-    dialog_host_context = _resolve_electronic_image_context(page, selectors)
-
-    outer_checks = [
-        ("dialog", selectors.get("upload_dialog", "")),
-        ("dialog_iframe", selectors.get("upload_dialog_iframe", 'iframe[id^="layui-layer-iframe"]')),
-        ("shade", '.layui-layer-shade'),
-    ]
-    for label, selector in outer_checks:
-        if not selector:
-            continue
-        try:
-            locator = dialog_host_context.locator(selector)
-            count = locator.count()
-            attempts.append(f"{label}:count={count}")
-            if count > 0:
-                try:
-                    visible = _wait_visible(locator.first, 200)
-                    attempts.append(f"{label}:visible={visible}")
-                except Exception as exc:
-                    attempts.append(f"{label}:visible=error:{type(exc).__name__}")
-        except Exception as exc:
-            attempts.append(f"{label}:count=error:{type(exc).__name__}")
-
-    upload_context = _resolve_upload_dialog_context(page, selectors)
-    if upload_context is None:
-        attempts.append("upload_iframe_context:none")
-    else:
-        attempts.append("upload_iframe_context:resolved")
-        inner_checks = [
-            ("file_input", selectors.get("file_input", "")),
-            ("start_upload_button", selectors.get("start_upload_button", "")),
-            ("choose_file_button", selectors.get("choose_file_button", "")),
-        ]
-        for label, selector in inner_checks:
-            if not selector:
-                continue
-            try:
-                locator = upload_context.locator(selector)
-                count = locator.count()
-                attempts.append(f"{label}:count={count}")
-                if count > 0:
-                    try:
-                        visible = _wait_visible(locator.first, 200)
-                        attempts.append(f"{label}:visible={visible}")
-                    except Exception as exc:
-                        attempts.append(f"{label}:visible=error:{type(exc).__name__}")
-            except Exception as exc:
-                attempts.append(f"{label}:count=error:{type(exc).__name__}")
-
-    return f"未成功打开上传弹窗 attempts={attempts}"
+    return _diagnose_upload_dialog_base(
+        page,
+        selectors,
+        _resolve_electronic_image_context,
+        _resolve_upload_dialog_context,
+        _count_visible_elements,
+        _wait_visible,
+    )
 
 
 def _wait_markers_in_context(context: LocatorContext, page: Page, marker_selectors: list[str], timeout: int) -> bool:
@@ -4514,63 +3977,49 @@ def _locator_has_non_empty_value(locator) -> bool:
 
 
 def _detect_duplicate_invoice_message(page: Page, selectors: dict[str, str]) -> str | None:
-    duplicate_selectors = [
-        selectors.get("duplicate_invoice_marker", ""),
-        '#txtDuplicate',
-        '#txtDuplicate span',
-        'text=发票重复',
-    ]
-    contexts: list[LocatorContext] = []
-    seen: set[int] = set()
-
-    def add(ctx: LocatorContext | None) -> None:
-        if ctx is None:
-            return
-        marker = id(ctx)
-        if marker in seen:
-            return
-        seen.add(marker)
-        contexts.append(ctx)
-
-    add(_resolve_selector_context(page, selectors, "duplicate_invoice_marker"))
-    add(_get_cached_electronic_image_context(page))
-    add(_resolve_image_system_context(page))
-    for context in _candidate_recognition_contexts(page, selectors):
-        add(context)
-
-    for context in contexts:
-        for selector in duplicate_selectors:
-            if not selector:
-                continue
-            try:
-                locator = context.locator(selector).first
-                if _wait_visible(locator, 120):
-                    text = ""
-                    try:
-                        text = (locator.inner_text(timeout=120) or "").strip()
-                    except Exception:
-                        text = ""
-                    if not text:
-                        try:
-                            text = (locator.text_content(timeout=120) or "").strip()
-                        except Exception:
-                            text = ""
-                    if "发票重复" in text:
-                        return f"{text}，已中止当前报销单录入"
-                    if selector in {"#txtDuplicate", "#txtDuplicate span", 'text=发票重复'}:
-                        return "发票重复，已中止当前报销单录入"
-            except Exception:
-                continue
-    return None
+    return _detect_duplicate_invoice_message_in_contexts(
+        page,
+        selectors,
+        timeout_ms=180,
+        include_all_candidates=True,
+        broad_selectors=True,
+    )
 
 
 def _detect_duplicate_invoice_message_fast(page: Page, selectors: dict[str, str], timeout_ms: int) -> str | None:
+    return _detect_duplicate_invoice_message_in_contexts(
+        page,
+        selectors,
+        timeout_ms=timeout_ms,
+        include_all_candidates=False,
+        broad_selectors=False,
+    )
+
+
+def _detect_duplicate_invoice_message_in_contexts(
+    page: Page,
+    selectors: dict[str, str],
+    timeout_ms: int,
+    include_all_candidates: bool,
+    broad_selectors: bool,
+) -> str | None:
     duplicate_selectors = [
         selectors.get("duplicate_invoice_marker", ""),
         "#txtDuplicate",
         "#txtDuplicate span",
+        "#txtDuplicate *",
         "text=发票重复",
     ]
+    if broad_selectors:
+        duplicate_selectors.extend(
+            [
+                'xpath=//*[contains(normalize-space(.),"发票重复")]',
+                'xpath=//*[contains(normalize-space(.),"重复报销")]',
+                'xpath=//*[contains(normalize-space(.),"已报销")]',
+                'xpath=//*[contains(normalize-space(.),"已经报销")]',
+                'xpath=//*[contains(normalize-space(.),"已使用")]',
+            ]
+        )
     contexts: list[LocatorContext] = []
     seen: set[int] = set()
 
@@ -4587,6 +4036,10 @@ def _detect_duplicate_invoice_message_fast(page: Page, selectors: dict[str, str]
     add(_get_cached_electronic_image_context(page))
     add(_resolve_image_system_context(page))
     add(_resolve_electronic_image_context(page, selectors))
+    if include_all_candidates:
+        for context in _candidate_recognition_contexts(page, selectors):
+            add(context)
+        add(page)
 
     per_locator_timeout = max(20, min(timeout_ms, 40))
     for context in contexts:
@@ -4594,26 +4047,59 @@ def _detect_duplicate_invoice_message_fast(page: Page, selectors: dict[str, str]
             if not selector:
                 continue
             try:
-                locator = context.locator(selector).first
-                if not _wait_visible(locator, per_locator_timeout):
+                locator = context.locator(selector)
+                if locator.count() <= 0:
                     continue
-                text = ""
-                try:
-                    text = (locator.inner_text(timeout=per_locator_timeout) or "").strip()
-                except Exception:
-                    text = ""
-                if not text:
+                for index in range(min(locator.count(), 8)):
+                    candidate = locator.nth(index)
+                    text = _duplicate_invoice_locator_text(candidate, per_locator_timeout)
+                    if _looks_like_duplicate_invoice_message(text):
+                        return _format_duplicate_invoice_message(text)
                     try:
-                        text = (locator.text_content(timeout=per_locator_timeout) or "").strip()
+                        visible = _wait_visible(candidate, per_locator_timeout)
                     except Exception:
-                        text = ""
-                if "发票重复" in text:
-                    return f"{text}，已中止当前报销单录入"
-                if selector in {"#txtDuplicate", "#txtDuplicate span", "text=发票重复"}:
-                    return "发票重复，已中止当前报销单录入"
+                        visible = False
+                    if visible and selector in {"#txtDuplicate", "#txtDuplicate span", "#txtDuplicate *", "text=发票重复"}:
+                        return "发票重复，已中止当前报销单录入"
             except Exception:
                 continue
     return None
+
+
+def _duplicate_invoice_locator_text(locator, timeout_ms: int) -> str:
+    values: list[str] = []
+    seen: set[str] = set()
+    for getter in (
+        lambda: locator.inner_text(timeout=timeout_ms),
+        lambda: locator.text_content(timeout=timeout_ms),
+        lambda: locator.input_value(timeout=timeout_ms),
+        lambda: locator.get_attribute("value", timeout=timeout_ms),
+        lambda: locator.get_attribute("title", timeout=timeout_ms),
+        lambda: locator.get_attribute("data-original-title", timeout=timeout_ms),
+    ):
+        try:
+            value = getter()
+        except Exception:
+            continue
+        if value:
+            normalized = " ".join(str(value).split())
+            if normalized and normalized not in seen:
+                seen.add(normalized)
+                values.append(normalized)
+    return " ".join(value for value in values if value)
+
+
+def _looks_like_duplicate_invoice_message(text: str) -> bool:
+    normalized = " ".join((text or "").split())
+    if not normalized:
+        return False
+    duplicate_keywords = ("发票重复", "重复报销", "重复提交", "已报销", "已经报销", "已使用")
+    return any(keyword in normalized for keyword in duplicate_keywords)
+
+
+def _format_duplicate_invoice_message(text: str) -> str:
+    normalized = " ".join((text or "").split())
+    return f"{normalized or '发票重复'}，已中止当前报销单录入"
 
 
 def _observe_duplicate_invoice_message(page: Page, selectors: dict[str, str], timeout_ms: int) -> str | None:
@@ -4660,20 +4146,15 @@ def _diagnose_invoice_recognition(page: Page, selectors: dict[str, str]) -> str:
 
 
 def _page_candidates(page: Page):
-    candidates: list[Any] = [page]
-    try:
-        candidates.extend(frame for frame in page.frames if frame != page.main_frame)
-    except Exception:
-        pass
-    return candidates
+    return _page_candidates_base(page)
 
 
 def _cache_active_working_page(page: Page, working_page: Page | None) -> None:
-    _cache_active_working_page_value(page, working_page, "_active_reimbursement_working_page")
+    _cache_active_working_page_base(page, working_page)
 
 
 def _get_cached_active_working_page(page: Page) -> Page | None:
-    return _get_cached_active_working_page_value(page, "_active_reimbursement_working_page")
+    return _get_cached_active_working_page_base(page)
 
 
 def _resolve_task_entry_page(page: Page, selectors: dict[str, str]) -> tuple[Page, str, str]:
@@ -4747,78 +4228,27 @@ def _context_debug_name(context: LocatorContext, index: int) -> str:
 
 
 def _attempt_finance_share_activation(page: Page, action, finance_ready_selectors: list[str], timeout: int) -> Page | None:
-    before_pages = list(page.context.pages)
-    action()
-
-    for _ in range(4):
-        page.wait_for_timeout(140)
-        for candidate in reversed(page.context.pages):
-            if candidate.is_closed():
-                continue
-            try:
-                candidate.wait_for_load_state("domcontentloaded", timeout=300)
-            except Exception:
-                pass
-            if _is_finance_share_page(candidate, finance_ready_selectors):
-                return candidate
-
-    if len(page.context.pages) > len(before_pages):
-        for candidate in reversed(page.context.pages):
-            if candidate not in before_pages and not candidate.is_closed():
-                return candidate
-
-    return None
+    return _attempt_finance_share_activation_base(page, action, finance_ready_selectors, timeout, _is_finance_share_page)
 
 
 def _safe_click_target(target, timeout: int, force: bool = False) -> None:
-    target.click(timeout=timeout, force=force)
+    _safe_click_target_base(target, timeout, force=force)
 
 
 def _visible_tree_node(page: Page, text: str):
-    return page.locator('div.tree-node:visible').filter(has=page.locator('span.tree-title', has_text=text)).first
+    return _visible_tree_node_base(page, text)
 
 
 def _ensure_tree_node_expanded(page: Page, text: str, timeout: int) -> None:
-    node = _visible_tree_node(page, text)
-    node.wait_for(state='visible', timeout=timeout)
-    hit = node.locator('span.tree-hit').first
-    if hit.count() == 0:
-        return
-
-    try:
-        hit.click(timeout=timeout)
-        page.wait_for_timeout(100)
-    except Exception:
-        pass
-
-    try:
-        clazz = hit.get_attribute('class') or ''
-        if 'tree-collapsed' in clazz:
-            hit.click(timeout=timeout)
-            page.wait_for_timeout(100)
-    except Exception:
-        pass
+    _ensure_tree_node_expanded_base(page, text, timeout)
 
 
 def _click_tree_title_fast(page: Page, text: str, timeout: int) -> None:
-    last_error: Exception | None = None
-    end_at = perf_counter() + (timeout / 1000)
-    while perf_counter() < end_at:
-        title_locator = _visible_tree_node(page, text).locator('span.tree-title').first
-        try:
-            if _wait_visible(title_locator, 300):
-                title_locator.click(timeout=300)
-                return
-        except Exception as exc:
-            last_error = exc
-        page.wait_for_timeout(60)
-    if last_error is not None:
-        raise last_error
-    raise RuntimeError(f"未找到可点击的树菜单节点：{text}")
+    _click_tree_title_fast_base(page, text, timeout, _wait_visible)
 
 
 def _click_go_reimbursement_fast(page: Page, selector: str, timeout: int) -> None:
-    _click_locator_fast(page, page, selector, timeout, "未找到可点击的‘我要报账’按钮")
+    _click_go_reimbursement_fast_base(page, selector, timeout, _click_locator_fast)
 
 
 def _click_locator_fast(context: LocatorContext, page: Page, selector: str, timeout: int, error_message: str) -> None:
@@ -4851,15 +4281,7 @@ def _hover_locator_fast(context: LocatorContext, page: Page, selector: str, time
 
 
 def _wait_iam_login_state(username_locator, finance_locator, timeout_ms: int) -> str:
-    interval_ms = 250
-    elapsed_ms = 0
-    while elapsed_ms <= timeout_ms:
-        if _wait_visible(finance_locator, 250):
-            return "finance"
-        if _wait_visible(username_locator, 250):
-            return "username"
-        elapsed_ms += interval_ms
-    return "timeout"
+    return _wait_iam_login_state_base(username_locator, finance_locator, timeout_ms, _wait_visible)
 
 
 def _ensure_visible(locator, timeout_ms: int, error_message: str) -> None:
@@ -4867,32 +4289,15 @@ def _ensure_visible(locator, timeout_ms: int, error_message: str) -> None:
 
 
 def _click_optional(locator) -> None:
-    try:
-        locator.click(force=True)
-    except Exception:
-        pass
+    _click_optional_base(locator)
 
 
 def _activate_by_keyboard(page, locator) -> None:
-    locator.focus()
-    page.keyboard.press("Enter")
+    _activate_by_keyboard_base(page, locator)
 
 
 def _is_finance_share_page(page: Page, selectors: list[str]) -> bool:
-    try:
-        if "fssc.fsg.inner" in page.url.lower():
-            return True
-    except Exception:
-        pass
-    for selector in selectors:
-        if not selector:
-            continue
-        try:
-            if _wait_visible(page.locator(selector).first, 200):
-                return True
-        except Exception:
-            continue
-    return False
+    return _is_finance_share_page_base(page, selectors, _wait_visible)
 
 
 def _wait_visible(locator, timeout_ms: int) -> bool:
