@@ -31,6 +31,7 @@ from automation.core.contexts import (
     resolve_selector_context,
     selector_context_hint,
 )
+from automation.core.diagnostics import AttemptLog
 from automation.core.errors import (
     AutomationError,
     PageStateError,
@@ -40,6 +41,7 @@ from automation.core.errors import (
 from automation.core.selectors import locator, locator_with_scope, modal_scope
 from automation.core.ui_patterns import (
     click_dialog_button_if_needed,
+    click_with_fallbacks,
     has_visible_dialog,
     is_selected_tab_present,
     wait_for_condition,
@@ -50,6 +52,7 @@ from automation.core.waits import (
     count_visible_elements,
     ensure_visible,
     locator_has_non_empty_value,
+    poll_until,
     wait_any_marker,
     wait_markers_in_context,
     wait_url_contains,
@@ -59,6 +62,7 @@ from automation.core.waits import (
 
 __all__ = [
     "AutomationError",
+    "AttemptLog",
     "PageStateError",
     "SelectorNotFoundError",
     "VerificationError",
@@ -68,6 +72,7 @@ __all__ = [
     "cache_page_context",
     "candidate_contexts_for_selector",
     "click_dialog_button_if_needed",
+    "click_with_fallbacks",
     "click_first_matching_locator",
     "click_latest_visible_element",
     "click_locator",
@@ -93,6 +98,7 @@ __all__ = [
     "locator_with_scope",
     "modal_scope",
     "page_candidates",
+    "poll_until",
     "resolve_context_by_markers",
     "resolve_first_visible_frame_context",
     "resolve_selector_context",

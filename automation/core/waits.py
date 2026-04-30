@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
+from time import perf_counter
+from typing import Any, Callable
 
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError
 
@@ -114,6 +115,28 @@ def wait_any_marker(
     return False
 
 
+def poll_until(
+    page: Page,
+    condition: Callable[[], bool],
+    timeout_ms: int,
+    interval_ms: int = 40,
+    attempts: list[str] | None = None,
+    ignore_errors: bool = True,
+) -> bool:
+    end_at = perf_counter() + (timeout_ms / 1000)
+    while perf_counter() < end_at:
+        try:
+            if condition():
+                return True
+        except Exception as exc:
+            if attempts is not None:
+                attempts.append(f"poll_error={type(exc).__name__}")
+            if not ignore_errors:
+                raise
+        page.wait_for_timeout(interval_ms)
+    return False
+
+
 def wait_url_contains(page: Page, text: str, timeout: int) -> None:
     page.wait_for_url(f"**{text}**", timeout=timeout)
 
@@ -122,6 +145,7 @@ __all__ = [
     "count_visible_elements",
     "ensure_visible",
     "locator_has_non_empty_value",
+    "poll_until",
     "wait_any_marker",
     "wait_markers_in_context",
     "wait_url_contains",

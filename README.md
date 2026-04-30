@@ -220,47 +220,53 @@ python .\main.py selfcheck
 - 报销单失败截图会优先保留报错当下的浏览器界面
 - 终端里看到的运行日志会同步写入对应的 `.log` 文件
 
-## 本批次更新内容
+## v0.5.0 更新内容
 
-本批次主要完成了报销单自动填报主流程的稳定化与标准化收口，重点包括：
+本版完成报销单自动化基座能力沉淀收尾，重点不是继续扩展报销业务逻辑，而是把已经验证过的通用执行策略、失败收口、等待模型和诊断能力沉淀到 `automation/`。
 
-### 1. 主体业务流稳定
+### 1. Runtime 执行策略基座
 
-- 稳定打通 `reimbursement-fill` 主流程
-- 稳定支持 `市内交通费报销` 与 `业务招待费报销`
-- 明确不同单据类型下的内部 tab 切换顺序
-- 优化电子影像上传、识别、重复发票处理与失败清场
+- 新增 `automation/runtime/steps.py`
+- `run_task_substep` 支持默认快失败、快重试
+- 支持 `retry_attempts` 与 `non_retryable_exceptions`
+- retry 耗尽时统一输出 `FAILED ... retries_exhausted`
+- 明确异常不误重试，例如重复发票会直接进入业务异常处理
 
-### 2. 上下文与页面操作增强
+### 2. 任务失败收口基座
 
-- 强化多 iframe / 多上下文定位能力
-- 收敛 tab 切换、明细填写、关闭确认框等关键交互逻辑
-- 优化失败场景下页面回退与状态清理
+- 新增 `automation/runtime/failures.py`
+- 新增 `handle_task_failure`
+- 统一处理未预期失败后的截图、失败截图路径缓存、失败清场和降级日志
+- 截图失败或清场失败不会覆盖最初导致任务失败的异常
 
-### 3. 日志与报告统一
+### 3. Core 通用能力增强
 
-- 终端输出同步写入日志文件
-- 批次报告整合进入 `output/logs`
-- 汇总输出任务总数、成功数、失败数、成功任务编号、失败任务编号
+- 新增 `automation/core/diagnostics.py`
+- 新增 `AttemptLog`，统一 attempts 诊断格式
+- 新增 `poll_until`，收口短轮询等待模型
+- 新增 `click_with_fallbacks`，统一普通点击、force 点击、JS 点击三段式兜底
+- 将新增能力导出到 `automation/core/__init__.py`
 
-### 4. 失败截图改进
+### 4. 报销 flow 接入基座
 
-- 失败时优先截取报错当下的浏览器现场
-- 规范截图命名为 `yyyymmdd_hhmmss_任务编号.png`
+- 发票识别完成检测接入 `run_task_substep`
+- 重复发票异常通过 `non_retryable_exceptions` 直通，不参与误重试
+- 未预期任务失败接入 `handle_task_failure`
+- 上传发票快速检测接入 `poll_until`
+- 上传发票失败诊断接入 `AttemptLog`
 
-### 5. 工程化完善
+### 5. SQLite 与忽略规则清理
 
-- 新增 `selfcheck` 命令用于入口导入自检
-- `cli` 改为按需加载 flow
-- 标准化 logger 名称，清理历史残留命名
+- 删除现有 `runtime.db` 中无业务用途的 `_dsn_healthcheck` 表
+- SQLite 写入探测改为通用瞬时表 `__sqlite_write_check`，不再残留业务命名表
+- fallback 临时目录从历史业务名改为 `automation_sqlite`
+- `.gitignore` 中的 `runtime/` 改为 `/runtime/`，避免误忽略 `automation/runtime/steps.py`
 
-### 6. README 使用约定
+### 6. 文档基线更新
 
-- 档案上传与报销单 flow 使用不同账号体系，不共用环境变量
-- 档案上传 flow 使用：`DSN_USERNAME` / `DSN_PASSWORD`
-- 报销单自动填报 flow 使用：`IAM_USERNAME` / `IAM_PASSWORD`
-- 示例命令优先以当前仓库中已经存在的真实配置文件和任务文件路径为准
-- 文档中的命令均以 `all-in-one_automation` 项目根目录为执行目录
+- 重整 `doc/报销单自动化基座能力沉淀说明.md`
+- 文档从历史流水账整理为当前版本基座能力总览
+- 明确哪些能力已进入 `automation/`，哪些报销业务能力继续留在 `flows/reimbursement_fill/`
 
 ## 相关文档
 

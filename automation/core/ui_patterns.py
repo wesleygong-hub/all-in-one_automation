@@ -164,30 +164,36 @@ def wait_for_tab_closed_and_state(
     )
 
 
-def _click_dialog_locator(locator: Any, attempts: list[str], prefix: str) -> bool:
+def click_with_fallbacks(locator: Any, attempts: list[str] | None = None, prefix: str = "locator", timeout_ms: int = 100) -> bool:
+    log = attempts if attempts is not None else []
     try:
-        locator.click(timeout=100)
-        attempts.append(f"{prefix}.click=ok")
+        locator.click(timeout=timeout_ms)
+        log.append(f"{prefix}.click=ok")
         return True
     except Exception as exc:
-        attempts.append(f"{prefix}.click=error:{type(exc).__name__}")
+        log.append(f"{prefix}.click=error:{type(exc).__name__}")
         try:
-            locator.click(timeout=100, force=True)
-            attempts.append(f"{prefix}.force_click=ok")
+            locator.click(timeout=timeout_ms, force=True)
+            log.append(f"{prefix}.force_click=ok")
             return True
         except Exception as force_exc:
-            attempts.append(f"{prefix}.force_click=error:{type(force_exc).__name__}")
+            log.append(f"{prefix}.force_click=error:{type(force_exc).__name__}")
             try:
                 locator.evaluate("(el) => el.click()")
-                attempts.append(f"{prefix}.js_click=ok")
+                log.append(f"{prefix}.js_click=ok")
                 return True
             except Exception as js_exc:
-                attempts.append(f"{prefix}.js_click=error:{type(js_exc).__name__}")
+                log.append(f"{prefix}.js_click=error:{type(js_exc).__name__}")
                 return False
+
+
+def _click_dialog_locator(locator: Any, attempts: list[str], prefix: str) -> bool:
+    return click_with_fallbacks(locator, attempts, prefix, timeout_ms=100)
 
 
 __all__ = [
     "click_dialog_button_if_needed",
+    "click_with_fallbacks",
     "has_visible_dialog",
     "is_selected_tab_present",
     "wait_for_condition",

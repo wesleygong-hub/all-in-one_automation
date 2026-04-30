@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 
 # Local runtime inputs / write-back
-runtime/
+/runtime/
 
 # Runtime artifacts
 data/

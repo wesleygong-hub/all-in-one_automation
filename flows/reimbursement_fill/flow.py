@@ -4,7 +4,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from time import perf_counter, sleep
+from time import perf_counter
 from typing import Any
 
 from playwright.sync_api import Page
@@ -24,10 +24,12 @@ from automation.core.contexts import (
     resolve_first_visible_frame_context,
     resolve_selector_context as _resolve_selector_context_base,
 )
+from automation.core.diagnostics import AttemptLog
 from automation.core.waits import (
     count_visible_elements as _count_visible_elements_base,
     ensure_visible as _ensure_visible_base,
     locator_has_non_empty_value as _locator_has_non_empty_value_base,
+    poll_until as _poll_until_base,
     wait_visible_bool as _wait_visible_base,
 )
 from automation.core.ui_patterns import (
@@ -43,6 +45,7 @@ from automation.runtime.steps import (
     run_batch_step as _timed_batch_step,
     run_task_substep as _timed_substep,
 )
+from automation.runtime.failures import handle_task_failure as _handle_task_failure_base
 from flows.reimbursement_fill.cleanup import (
     diagnose_cleanup_state as _diagnose_cleanup_state_base,
     select_cleanup_working_page as _select_cleanup_working_page_base,
@@ -338,13 +341,18 @@ def run_task(page, config: dict[str, Any], task: ReimbursementTaskRecord, logger
         _step(logger, step_log, task, "close_reimbursement_bill_tab", "SUCCESS", f"已关闭当前报销单页签并返回我要报账 elapsed_ms={_elapsed_ms(started_at)}")
 
         return ReimbursementTaskResult(status="success", message="reimbursement form saved")
-    except Exception:
-        try:
-            failure_screenshot_path = capture_screenshot(working_page, config["paths"]["screenshot_dir"], task)
-            cache_browser_context_value(page, "_last_failure_screenshot_path", failure_screenshot_path)
-        except Exception:
-            cache_browser_context_value(page, "_last_failure_screenshot_path", None)
-        _cleanup_failed_reimbursement_task(page, working_page, selectors, timeout, logger, task.task_id)
+    except Exception as exc:
+        _handle_unexpected_task_failure(
+            page,
+            working_page,
+            selectors,
+            timeout,
+            logger,
+            task,
+            step_log,
+            exc,
+            config["paths"]["screenshot_dir"],
+        )
         raise
 
 
@@ -414,6 +422,28 @@ def _cleanup_failed_reimbursement_task(
     _cache_active_working_page(page, working_page)
     _clear_reimbursement_runtime_caches(page, keep_active_page=True)
     return actions
+
+
+def _handle_unexpected_task_failure(
+    page: Page,
+    working_page: Page,
+    selectors: dict[str, str],
+    timeout: int,
+    logger: logging.Logger,
+    task: ReimbursementTaskRecord,
+    step_log: StepLogger,
+    exc: Exception,
+    screenshot_dir: str,
+) -> None:
+    _handle_task_failure_base(
+        page,
+        task,
+        logger,
+        step_log,
+        exc,
+        capture_screenshot=lambda: capture_screenshot(working_page, screenshot_dir, task),
+        cleanup=lambda: _cleanup_failed_reimbursement_task(page, working_page, selectors, timeout, logger, task.task_id),
+    )
 
 
 def capture_screenshot(page, screenshot_dir: str, task: ReimbursementTaskRecord) -> str:
@@ -929,7 +959,7 @@ def _detect_uploaded_invoice(page: Page, task: ReimbursementTaskRecord, selector
         30,
     ):
         return
-    attempts: list[str] = []
+    attempts = AttemptLog()
     for index, candidate_context in enumerate(_candidate_recognition_contexts(page, selectors)):
         context_name = _context_debug_name(candidate_context, index)
         _uploaded_invoice_ready_in_context(
@@ -944,7 +974,7 @@ def _detect_uploaded_invoice(page: Page, task: ReimbursementTaskRecord, selector
     duplicate_message = _detect_duplicate_invoice_message(page, selectors)
     if duplicate_message is not None:
         raise DuplicateInvoiceDetectedError(duplicate_message)
-    raise RuntimeError(f"未检测到已上传发票记录 attempts={attempts}")
+    raise RuntimeError(f"未检测到已上传发票记录 attempts={attempts.as_list()}")
 
 
 def _quick_detect_uploaded_invoice_in_context(
@@ -956,18 +986,18 @@ def _quick_detect_uploaded_invoice_in_context(
     timeout_ms: int,
     interval_ms: int,
 ) -> bool:
-    end_at = perf_counter() + (timeout_ms / 1000)
-    while perf_counter() < end_at:
-        if _uploaded_invoice_ready_in_context(
+    return _poll_until_base(
+        context,
+        lambda: _uploaded_invoice_ready_in_context(
             context,
             marker_names,
             item_selectors,
             container_selectors,
             expected_count,
-        ):
-            return True
-        context.wait_for_timeout(interval_ms) if hasattr(context, "wait_for_timeout") else None
-    return False
+        ),
+        timeout_ms,
+        interval_ms,
+    )
 
 
 def _abort_duplicate_invoice_task(
@@ -1009,7 +1039,7 @@ def _uploaded_invoice_ready_in_context(
     item_selectors: list[str],
     container_selectors: list[str],
     expected_count: int,
-    attempts: list[str] | None = None,
+    attempts: AttemptLog | None = None,
     context_name: str | None = None,
 ) -> bool:
     for idx, selector in enumerate(item_selectors):
@@ -1020,10 +1050,10 @@ def _uploaded_invoice_ready_in_context(
             count = _count_visible_elements(context, selector)
         except Exception as exc:
             if attempts is not None and context_name is not None:
-                attempts.append(f"{context_name}:items[{idx}]=error:{type(exc).__name__}")
+                attempts.add_error(context_name, f"items[{idx}]", exc)
             continue
         if attempts is not None and context_name is not None:
-            attempts.append(f"{context_name}:items[{idx}]={count}")
+            attempts.add_value(context_name, f"items[{idx}]", count)
         if count >= expected_count:
             return True
     for idx, selector in enumerate(container_selectors):
@@ -1031,10 +1061,10 @@ def _uploaded_invoice_ready_in_context(
             visible = _count_visible_elements(context, selector) > 0
         except Exception as exc:
             if attempts is not None and context_name is not None:
-                attempts.append(f"{context_name}:container[{idx}]=error:{type(exc).__name__}")
+                attempts.add_error(context_name, f"container[{idx}]", exc)
             continue
         if attempts is not None and context_name is not None:
-            attempts.append(f"{context_name}:container[{idx}]={visible}")
+            attempts.add_value(context_name, f"container[{idx}]", visible)
         if not visible:
             continue
         for item_idx, item_selector in enumerate(item_selectors):
@@ -1044,10 +1074,10 @@ def _uploaded_invoice_ready_in_context(
                 count = _count_visible_elements(context, item_selector)
             except Exception as exc:
                 if attempts is not None and context_name is not None:
-                    attempts.append(f"{context_name}:container_items[{idx}][{item_idx}]=error:{type(exc).__name__}")
+                    attempts.add_error(context_name, f"container_items[{idx}][{item_idx}]", exc)
                 continue
             if attempts is not None and context_name is not None:
-                attempts.append(f"{context_name}:container_items[{idx}][{item_idx}]={count}")
+                attempts.add_value(context_name, f"container_items[{idx}][{item_idx}]", count)
             if count >= expected_count:
                 return True
     for idx, name in enumerate(marker_names):
@@ -1055,10 +1085,10 @@ def _uploaded_invoice_ready_in_context(
             visible = context.get_by_text(name, exact=False).count() > 0
         except Exception as exc:
             if attempts is not None and context_name is not None:
-                attempts.append(f"{context_name}:filename[{idx}]=error:{type(exc).__name__}")
+                attempts.add_error(context_name, f"filename[{idx}]", exc)
             continue
         if attempts is not None and context_name is not None:
-            attempts.append(f"{context_name}:filename[{idx}]={visible}")
+            attempts.add_value(context_name, f"filename[{idx}]", visible)
         if visible:
             return True
     return False
@@ -3736,22 +3766,31 @@ def _detect_invoice_recognition_with_diagnostics(
     task_id: str,
     step_log: StepLogger,
 ) -> None:
-    logger.info(f"[TASK {task_id}] [detect_recognize_finished] START 检测识别完成")
-    step_log(task_id, "detect_recognize_finished", "START 检测识别完成")
-    started_at = perf_counter()
-    try:
-        _ensure_invoice_recognized_diagnostic(page, selectors, timeout, logger, task_id, step_log, attempt_index=1, final_attempt=False)
-    except DuplicateInvoiceDetectedError:
-        raise
-    except Exception as first_error:
-        retry_message = f"RETRY 检测识别完成 delay_ms=500 first_error={type(first_error).__name__}"
-        logger.info(f"[TASK {task_id}] [detect_recognize_finished] {retry_message}")
-        step_log(task_id, "detect_recognize_finished", retry_message)
-        sleep(0.5)
-        _ensure_invoice_recognized_diagnostic(page, selectors, timeout, logger, task_id, step_log, attempt_index=2, final_attempt=True)
-    elapsed = _elapsed_ms(started_at)
-    logger.info(f"[TASK {task_id}] [detect_recognize_finished] SUCCESS 检测识别完成 elapsed_ms={elapsed}")
-    step_log(task_id, "detect_recognize_finished", f"SUCCESS 检测识别完成 elapsed_ms={elapsed}")
+    attempt_index = 0
+
+    def detect_once() -> None:
+        nonlocal attempt_index
+        attempt_index += 1
+        _ensure_invoice_recognized_diagnostic(
+            page,
+            selectors,
+            timeout,
+            logger,
+            task_id,
+            step_log,
+            attempt_index=attempt_index,
+            final_attempt=attempt_index >= 2,
+        )
+
+    _timed_substep(
+        logger,
+        step_log,
+        task_id,
+        "detect_recognize_finished",
+        "检测识别完成",
+        detect_once,
+        non_retryable_exceptions=(DuplicateInvoiceDetectedError,),
+    )
 
 
 def _ensure_invoice_recognized_diagnostic(

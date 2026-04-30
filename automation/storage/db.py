@@ -63,7 +63,8 @@ def _resolve_sqlite_path(db_path: str) -> str:
 def _can_use_sqlite_path(db_path: str) -> bool:
     try:
         conn = sqlite3.connect(db_path)
-        conn.execute("CREATE TABLE IF NOT EXISTS __dsn_healthcheck (x INTEGER)")
+        conn.execute("CREATE TABLE IF NOT EXISTS __sqlite_write_check (x INTEGER)")
+        conn.execute("DROP TABLE IF EXISTS __sqlite_write_check")
         conn.commit()
         conn.close()
         return True
@@ -96,7 +97,7 @@ def _get_short_path(path: str) -> str:
 
 def _fallback_sqlite_path(original_path: str) -> str:
     digest = hashlib.sha1(str(Path(original_path).resolve()).encode("utf-8")).hexdigest()[:8]
-    base = Path(tempfile.gettempdir()) / "dsn_uploader_sqlite"
+    base = Path(tempfile.gettempdir()) / "automation_sqlite"
     return str((base / f"runtime_{digest}.db").resolve())
 
 
